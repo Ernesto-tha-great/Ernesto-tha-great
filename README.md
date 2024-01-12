@@ -3,7 +3,7 @@
 Hi there, my name is Ernest Nnamdi! 👋
 
 
-🌱 I’m currently a devrel engineer at Celo Foundation.
+🌱 I’m currently building Piron Finance.
 
 👯 I’m looking to collaborate on anything nice :)
 
