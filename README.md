@@ -3,7 +3,7 @@
 Hi there, my name is Ernest Nnamdi! 👋
 
 
-🌱 I’m currently building Piron Finance.
+🌱 I’m currently a developer relations engineer at Morph.
 
 👯 I’m looking to collaborate on anything nice :)
 
