@@ -1,6 +1,6 @@
 # Ten article drafts for a Tech Nation evidence trail
 
-Ernest Nnamdi · Developer Relations Engineer · v4 · October 2026
+Ernest Nnamdi · Developer Relations Engineer · v5 · October 2026
 
 **The through-line:** *reliable software built on unreliable parts*. The unreliable parts are flaky networks, strangers' servers, non-deterministic models, and developers who don't come back. Ten unrelated topics read like a content calendar. One theme, attacked from ten angles, reads like expertise.
 
@@ -10,9 +10,9 @@ Ernest Nnamdi · Developer Relations Engineer · v4 · October 2026
 
 # Part 1: Core engineering (1–5)
 
-## 1. Treat Every Request Like Checked Luggage
+## 1. Offline-First React Native: A Failure Taxonomy From Real Network Traces
 
-**Subtitle:** A failure taxonomy for offline-first React Native, tested against real commute traces.
+**Subtitle:** Treat every request like checked luggage: tag it, queue it, and make sure it never arrives twice.
 
 **Description:** Checked luggage gets a tag, waits for the next flight if it misses one, and should never arrive twice. That's the whole job of an offline request queue:
 
@@ -37,9 +37,9 @@ Where the analogy breaks: a retry doesn't move the bag. It copies it, and only t
 
 ---
 
-## 2. Stop Serving Your Database Raw
+## 2. Migrating a GraphQL Schema Without Breaking Legacy Mobile Clients
 
-**Subtitle:** How we reshaped a table-shaped GraphQL schema without breaking the mobile clients that never update.
+**Subtitle:** DataLoader, persisted queries, and the Android build that will never update.
 
 **Description:** Our first GraphQL schema was the database with a query language bolted on: tables mirrored one-to-one, nullable everything, 400 queries to render one screen. Fixing the shape was the easy part. The hard part was the Android app from eighteen months ago that will never update. This migration case study covers:
 
@@ -56,9 +56,9 @@ All with the numbers.
 
 ---
 
-## 3. The Second Hello World
+## 3. Time to Second Success: Measuring Developer Retention on API Platforms
 
-**Subtitle:** Time to first call is the metric everyone tracks. Time to second success is the one that predicts whether developers stay.
+**Subtitle:** Everyone tracks the first API call. The second one is where developers decide to stay.
 
 **Description:** Every developer platform tracks how fast a newcomer makes their first API call. Almost none track whether they come back. "Time to Second Success" is the gap between a developer's first working call and their next one that wasn't triggered by a nudge email in the prior seven days. It is activation and retention under a new name, and I'll say so.
 
@@ -74,9 +74,9 @@ The argument is about ownership: platform and DevRel teams should be judged on t
 
 ---
 
-## 4. The Kilobyte Tax
+## 4. The Mobile Data Cost of JavaScript: Pricing 50 Web Apps in 50 Countries
 
-**Subtitle:** What it costs to open the web's most-used apps, priced in mobile data across 50 countries.
+**Subtitle:** Developers measure bundles in kilobytes. Users pay for them in money.
 
 **Description:** Developers talk about bundle size in kilobytes. Users pay for it in money, and the price of a gigabyte varies enormously by country. Using one consistent source of per-gigabyte mobile data prices (cable.co.uk's latest worldwide comparison), I measured what a first load and a repeat visit cost for 50 widely used web apps. I also measured how much of that cost is JavaScript the user never runs. I report each cost two ways: in money, and as a share of income (GNI per capita).
 
@@ -88,9 +88,9 @@ The piece names the heaviest apps and shows the three fixes that saved the most 
 
 ---
 
-## 5. Webhooks Are Promises You Make to Strangers
+## 5. The Webhooks Handbook: Reliable Delivery With Node.js and TypeScript
 
-**Subtitle:** The Webhooks Handbook: signing, retrying and apologising for HTTP calls you send to servers you've never met.
+**Subtitle:** Signing, retrying and apologising for HTTP calls you send to servers you've never met.
 
 **Description:** A webhook is a promise: the kind your API makes, not the kind you `await`. Most APIs break it quietly. Events arrive twice, out of order, or not at all, and the receiving developer finds out from an angry customer. This handbook builds both sides in Node.js and TypeScript to the Standard Webhooks spec:
 
@@ -152,9 +152,9 @@ These go out with your applications, before any article runs:
 
 ---
 
-## 6. Sheet Music for Robots
+## 6. How Much Spec Do AI Coding Agents Need? Measuring Drift With Tessl and GitHub Spec Kit
 
-**Subtitle:** How much spec does it take before every agent plays the same piece? Prose, examples and executable tests, measured with Tessl skills and GitHub Spec Kit.
+**Subtitle:** If the spec is sheet music, how much notation does it take before every agent plays the same piece?
 
 **Description:** If the spec becomes the source of truth, as Tessl (the London startup founded by Snyk's Guy Podjarny) is betting, then a spec is sheet music and code is a performance. A prose spec is a lead sheet that every player interprets differently. Worked examples are like a recording to copy. Executable tests are the full score.
 
@@ -175,9 +175,9 @@ This builds on Birgitta Böckeler's comparison of Kiro, Spec Kit and Tessl on ma
 
 ---
 
-## 7. Give Your Agent a Visitor Badge
+## 7. Least-Privilege Database Access for AI Agents: Benchmarking DataGrip's Agent Skills
 
-**Subtitle:** Least-privilege database access for AI agents, and a text-to-SQL benchmark of DataGrip's new agent skills.
+**Subtitle:** Give your agent a visitor badge, not the master key, then watch what it does with it.
 
 **Description:** A visitor badge opens specific rooms for a set time, with an escort, and every door logs you. That's what an AI agent's database access should look like:
 
@@ -199,9 +199,9 @@ Where the analogy breaks: a visitor can still memorise what they saw. Every row 
 
 ---
 
-## 8. Wait, Let Me Finish
+## 8. Measuring Mouth-to-Ear Latency in Voice AI Agents With LiveKit and React Native
 
-**Subtitle:** Mouth-to-ear latency for a voice agent on a phone, over the same bad networks from article 1.
+**Subtitle:** Where the half-second goes between the end of your sentence and the agent's first word.
 
 **Description:** In a ten-language study of answers to yes/no questions, the most common gap between turns was 0–200 ms (Stivers et al., PNAS 2009). Voice agents miss that window in both directions: they either cut into your pause or leave you hanging.
 
@@ -223,9 +223,9 @@ I took the measurements on good Wi-Fi, then over the commute traces from article
 
 ---
 
-## 9. Someone Replaced the Examiner
+## 9. Detecting LLM-as-a-Judge Drift Across Model Updates With Arize Phoenix
 
-**Subtitle:** Measuring LLM-as-judge drift across model updates, against two human markers, with Arize Phoenix.
+**Subtitle:** Your eval suite passed in March. Then someone replaced the examiner.
 
 **Description:** Exam boards keep markers honest with moderation: re-mark a sample of their papers, then adjust. Exam boards also don't swap the examiner overnight. Model providers do it every few months, and an eval suite that passed in March can quietly mean something else by June.
 
@@ -250,9 +250,9 @@ The piece cites Shankar et al.'s "Who Validates the Validators?" (UIST 2024) and
 
 ---
 
-## 10. Your Agent Is a Distributed System Now
+## 10. Durable Execution for TypeScript AI Agents: Chaos-Testing Mastra, AI SDK and LangGraph.js
 
-**Subtitle:** Counting duplicate side effects when TypeScript agents crash mid-run: Mastra, the AI SDK and LangGraph.js under the same chaos tests.
+**Subtitle:** What happens to the email your agent already sent when the process dies mid-run.
 
 **Description:** An agent loop is a distributed system in which one participant is non-deterministic and every tool call is a side effect. When the process dies halfway through, does your agent re-send the email it already sent?
 
@@ -311,7 +311,7 @@ Two of your three recommendation letters should come from people outside your co
 
 What to take from Justin Irabor (Craft Overflow):
 
-- **Title and subtitle.** The title makes a claim; the subtitle winks. One joke per pair.
+- **Title and subtitle.** The title says exactly what the article covers: the technology, the problem, and the method or result. It should read like a conference talk title, like his "Exploring Ethereum's ERC-721 Standard". The subtitle carries the wit, like his "Because NFTs are about way more than digital art". One joke per pair, and never in the title.
 - **One analogy per article.** Map every part of it to a mechanism, and say in one sentence where it breaks.
 - **Open with a confession.** Use a small, specific one: the bug you shipped, or the metric you trusted.
 - **Real conditions are the test lab, not the scenery.** That means latency, packet loss, token bills and p95s.
@@ -344,3 +344,6 @@ Don't borrow his signatures: "An African X's Guide to…" framing, "Look, I get 
   - **#1:** now uses Mahimahi to replay the traces
   - **#4:** now uses a single price source plus affordability
   - moved talks earlier and set realistic acceptance expectations
+- **v4 → v5** (your feedback):
+  - rewrote all ten titles as plain technical titles (technology + problem + method)
+  - moved the analogies and wit into the subtitles
