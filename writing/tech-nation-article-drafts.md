@@ -137,7 +137,7 @@ Checked 7 October 2026 via job aggregators. Confirm each role on the company's c
 | Arize AI | Developer Relations Education Engineer | 27 Aug 2026 | Bay Area per the main listing, remote per a Wellfound copy; ask which | Plausible; wants recorded talks, videos or courses |
 | LiveKit | Senior Developer Advocate, Social | 1 Sep 2026 | US only | Long shot: the role runs their social channels and needs a proven audience |
 
-DataGrip is a JetBrains product with no DevRel hiring signal. It's here because you asked for it. If you meant **Datagrid**, the San Francisco AI-agents startup, say so and I'll swap the pitch.
+Cognition (Devin, Windsurf) posted its first Developer Relations Engineer role, which has been reposted since, and a Developer Community Manager role on 17 Jul 2026. Confirm the DevRel role is still open.
 
 ### Two-week proof kits
 
@@ -148,6 +148,7 @@ These go out with your applications, before any article runs:
 | Tessl | A Standard Webhooks skill published to their registry, with task-eval results; a 5-minute video; 2–3 docs PRs; a talk proposal to AI Native DevCon |
 | Mastra | A template for their gallery; a 3-minute demo; a week of answering questions in their Discord |
 | Arize AI | A recorded 20-minute workshop; a learner repo set up for coding agents (an AGENTS.md file and Phoenix's MCP server); a TypeScript docs PR |
+| Cognition | The agent-PR gate as a public GitHub Action; a 3-minute video of a Devin PR going through it; a write-up of where Devin's PRs failed the gate and why |
 | LiveKit | A voice agent people can actually call; a 60-second latency clip; a social thread; a PR to the agents-js examples |
 
 ---
@@ -175,26 +176,21 @@ This builds on Birgitta Böckeler's comparison of Kiro, Spec Kit and Tessl on ma
 
 ---
 
-## 7. Least-Privilege Database Access for AI Agents: Benchmarking DataGrip's Agent Skills
+## 7. Guardrails for Autonomous Coding Agents: A CI Pipeline for Reviewing Devin Pull Requests
 
-**Subtitle:** Give your agent a visitor badge, not the master key, then watch what it does with it.
+**Subtitle:** Treat the agent like a prolific new contributor: welcome the PRs, trust only the tests.
 
-**Description:** A visitor badge opens specific rooms for a set time, with an escort, and every door logs you. That's what an AI agent's database access should look like:
+**Description:** Autonomous coding agents like Cognition's Devin take a ticket and come back with a pull request. That makes the agent the most prolific contributor on your team, and the one with the least context. This tutorial builds the pipeline that makes that safe:
 
-- views instead of tables
-- `REVOKE TEMP`
-- a `statement_timeout`
-- consent prompts as the escort
-- an audit log
+- a ticket template the agent can actually finish
+- a GitHub Action that hands labelled issues to Devin through its API
+- a CI gate on every agent-authored PR: tests, a coverage delta, a diff-size budget, protected paths and a secret scan
+- a summary comment that tells the human reviewer where to look
 
-The piece opens with that role template. JetBrains' own docs admit the IDE's consent prompts don't guarantee read-only access, so the template is not optional.
+The same gate works for any agent that opens PRs, so the piece compares Devin with at least one other coding agent on the same tickets.
 
-Then comes the benchmark. DataGrip 2026.2 ships three agent skills (connection management, text-to-SQL and database tools), and JetBrains says they improve accuracy while using fewer tokens. The skills only run inside DataGrip's AI chat; external agents get its MCP tools instead. So I ran about 300 chat sessions on my own API key: a corrected subset of BIRD Mini-Dev (the original has known annotation errors), with and without the skills, logging execution accuracy and tokens.
-
-Where the analogy breaks: a visitor can still memorise what they saw. Every row an agent reads goes to a model provider, so the views, not the badge, decide what leaves the building.
-
-**Platform:** Towards Data Science. Its editors ask for new methods or underserved areas.
-**Build first:** the Postgres role template and the benchmark harness.
+**Platform:** InfoQ (DevOps).
+**Build first:** the gate as a reusable GitHub Action in its own repo.
 **Tech Nation:** OC2.
 
 ---
@@ -280,7 +276,7 @@ Temporal, Inngest and Restate have argued for durable agents in general. This pi
 | Month 1 | Apply to freeCodeCamp with your Substack samples. Pitch **#6** to InfoQ. Send talk proposals to AI Native DevCon and local meetups. |
 | Month 2 | **#5** (freeCodeCamp) and **#9** (Towards Data Science). Give your first meetup talk. |
 | Month 3 | **#8** outline to Smashing. Pitch **#10** to LeadDev. |
-| Month 4 | **#7** (Towards Data Science). **#1** outline to Smashing. |
+| Month 4 | **#7** (InfoQ). **#1** outline to Smashing. |
 | Months 5–6 | **#4** (freeCodeCamp), then pitch its findings to reporters and podcasts. |
 | Month 7 | **#3** (LeadDev). |
 | Month 8 | **#2** (InfoQ), once your employer has signed off. |
@@ -290,7 +286,7 @@ Temporal, Inngest and Restate have argued for durable agents in general. This pi
 
 **Expect rejections:** starting from zero bylines, 6–7 acceptances out of 10 pitches is a good result. Re-pitch the rejected ones elsewhere; don't bunch them up.
 
-**Platform spread:** two pieces each at Smashing, InfoQ, LeadDev, freeCodeCamp and Towards Data Science. All five have editors who review before publishing, which Tech Nation's 2025 guidance treats as essential.
+**Platform spread:** three pieces at InfoQ, two each at Smashing, LeadDev and freeCodeCamp, and one at Towards Data Science. All five have editors who review before publishing, which Tech Nation's 2025 guidance treats as essential.
 
 **Keep an evidence log from day one.** Record each signal with its date and a screenshot:
 
@@ -347,3 +343,5 @@ Don't borrow his signatures: "An African X's Guide to…" framing, "Look, I get 
 - **v4 → v5** (your feedback):
   - rewrote all ten titles as plain technical titles (technology + problem + method)
   - moved the analogies and wit into the subtitles
+- **v5 → v6** (your feedback):
+  - replaced DataGrip (#7) with Cognition's Devin
