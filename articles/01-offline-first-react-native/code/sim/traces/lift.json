@@ -1,0 +1,11 @@
+{
+  "name": "lift",
+  "description": "Six minutes in an office building: good Wi-Fi, a 45-second lift ride where the phone shows full bars and nothing gets through, then a weak signal while the doors open.",
+  "source": "synthetic",
+  "segments": [
+    { "seconds": 60, "state": "up", "latencyMs": 100 },
+    { "seconds": 45, "state": "blackhole" },
+    { "seconds": 15, "state": "up", "latencyMs": 1200, "lossRate": 0.5 },
+    { "seconds": 240, "state": "up", "latencyMs": 100 }
+  ]
+}

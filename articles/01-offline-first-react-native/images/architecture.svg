@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="1200" height="560" role="img" aria-labelledby="t d">
+<title id="t">Architecture of the checked-luggage offline queue</title>
+<desc id="d">A tap enqueues a tagged request and writes it to disk. A scheduler triggers flush, which probes the server, sends tagged batches, and applies per-item verdicts. The server checks each tag before doing the work.</desc>
+<style>
+  svg { --surface:#fcfcfb; --panel:#f3f2ee; --box:#ffffff; --line:#c9c8c2; --ink:#0b0b0b; --ink-2:#52514e; --accent:#2a78d6; --good:#0a7d0a; --bad:#c03434; }
+  @media (prefers-color-scheme: dark) { svg { --surface:#1a1a19; --panel:#232321; --box:#2c2c2a; --line:#4a4a46; --ink:#ffffff; --ink-2:#c3c2b7; --accent:#5598e7; --good:#3fbf3f; --bad:#e66767; } }
+  text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+  .h1 { font-size: 22px; font-weight: 700; }
+  .panel-label { font-size: 13px; font-weight: 600; fill: var(--ink-2); letter-spacing: .06em; text-transform: uppercase; }
+  .box { fill: var(--box); stroke: var(--line); stroke-width: 1.5; }
+  .bt { font-size: 15px; font-weight: 650; }
+  .bb { font-size: 12.5px; fill: var(--ink-2); }
+  .code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px; font-weight: 600; }
+  .arrow { stroke: var(--accent); stroke-width: 2; fill: none; marker-end: url(#a); }
+  .al { font-size: 12.5px; font-weight: 600; fill: var(--accent); }
+  .good { fill: var(--good); font-weight: 600; }
+  .bad { fill: var(--bad); font-weight: 600; }
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>
+<rect width="100%" height="100%" fill="var(--surface)"/>
+<text class="h1" x="40" y="48">From tap to server: the checked-luggage queue</text>
+
+<rect x="30" y="80" width="760" height="450" rx="12" fill="var(--panel)"/>
+<text class="panel-label" x="52" y="108">On the phone</text>
+<rect x="820" y="80" width="350" height="450" rx="12" fill="var(--panel)"/>
+<text class="panel-label" x="842" y="108">On your server</text>
+
+<!-- Row 1 -->
+<rect class="box" x="60" y="130" width="170" height="74" rx="10"/>
+<text class="bt" x="78" y="162">User taps Save</text>
+<text class="bb" x="78" y="184">UI says "Saved" at once</text>
+
+<rect class="box" x="290" y="130" width="210" height="74" rx="10"/>
+<text class="code" x="308" y="160">enqueue()</text>
+<text class="bb" x="308" y="182">tag it (idempotency key),</text>
+<text class="bb" x="308" y="198">write to disk, then resolve</text>
+
+<rect class="box" x="560" y="130" width="200" height="74" rx="10"/>
+<text class="bt" x="578" y="160">Storage</text>
+<text class="bb" x="578" y="182">AsyncStorage or MMKV;</text>
+<text class="bb" x="578" y="198">the whole queue is one key</text>
+
+<path class="arrow" d="M230 167 H286"/>
+<path class="arrow" d="M500 167 H556"/>
+
+<!-- Row 2 -->
+<rect class="box" x="60" y="270" width="170" height="120" rx="10"/>
+<text class="bt" x="78" y="300">Scheduler</text>
+<text class="bb" x="78" y="324">app comes to foreground</text>
+<text class="bb" x="78" y="344">NetInfo change (a hint)</text>
+<text class="bb" x="78" y="364">nextWakeAt() timer</text>
+
+<rect class="box" x="290" y="270" width="210" height="120" rx="10"/>
+<text class="code" x="308" y="300">flush()</text>
+<text class="bb" x="308" y="324">1. probe, unless we heard</text>
+<text class="bb" x="308" y="340">    from the server recently</text>
+<text class="bb" x="308" y="360">2. send due items in batches</text>
+<text class="bb" x="308" y="380">3. apply each verdict</text>
+
+<path class="arrow" d="M395 204 V266"/>
+<text class="al" x="404" y="242">kick</text>
+<path class="arrow" d="M230 330 H286"/>
+
+<!-- Verdicts -->
+<rect class="box" x="290" y="430" width="470" height="78" rx="10"/>
+<text class="bt" x="308" y="458">Per-item verdicts</text>
+<text class="bb" x="308" y="484"><tspan class="good">delivered</tspan> → remove</text>
+<text class="bb" x="452" y="484"><tspan class="al">retry</tspan> → backoff + jitter</text>
+<text class="bb" x="620" y="484"><tspan class="bad">rejected</tspan> → dead letter</text>
+<path class="arrow" d="M660 430 V208"/>
+<text class="al" x="668" y="330">persist</text>
+
+<!-- Server -->
+<rect class="box" x="850" y="250" width="290" height="74" rx="10"/>
+<text class="code" x="868" y="280">GET /generate_204</text>
+<text class="bb" x="868" y="302">204 = online; a login page or</text>
+<text class="bb" x="868" y="318">redirect = someone in the way</text>
+
+<rect class="box" x="850" y="350" width="290" height="158" rx="10"/>
+<text class="code" x="868" y="380">POST /batch</text>
+<text class="bb" x="868" y="404">for each item:</text>
+<text class="bb" x="868" y="424">· seen this tag? return the</text>
+<text class="bb" x="868" y="440">  stored verdict, do nothing</text>
+<text class="bb" x="868" y="460">· otherwise do the work and</text>
+<text class="bb" x="868" y="476">  store the tag in the same</text>
+<text class="bb" x="868" y="492">  transaction (unique key)</text>
+
+<path class="arrow" d="M500 290 H846"/>
+<text class="al" x="560" y="282">1 · probe</text>
+<path class="arrow" d="M500 360 C 640 360, 700 400, 846 400"/>
+<text class="al" x="560" y="352">2 · tagged batch</text>
+<path class="arrow" d="M850 480 C 810 480, 800 470, 764 470"/>
+<text class="al" x="770" y="520">3 · verdicts</text>
+</svg>

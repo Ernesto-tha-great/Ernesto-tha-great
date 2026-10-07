@@ -1,0 +1,14 @@
+{
+  "name": "data-cap",
+  "description": "Fifteen minutes on a SIM that hits its data cap after two minutes. The phone still reports a connection, but nothing gets through for nine minutes until the user buys more data. The app is backgrounded for two minutes in the middle.",
+  "source": "synthetic",
+  "segments": [
+    { "seconds": 120, "state": "up", "latencyMs": 150 },
+    { "seconds": 540, "state": "blackhole" },
+    { "seconds": 240, "state": "up", "latencyMs": 150 }
+  ],
+  "events": [
+    { "at": 300, "type": "suspend" },
+    { "at": 420, "type": "resume" }
+  ]
+}

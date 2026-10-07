@@ -1,0 +1,25 @@
+{
+  "name": "checked-luggage",
+  "version": "0.1.0",
+  "description": "A durable, idempotent offline request queue for React Native, with a network-trace replay harness.",
+  "type": "module",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts",
+    "bench": "tsx bench/run.ts",
+    "server": "tsx server/main.ts",
+    "chart": "tsx bench/chart.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

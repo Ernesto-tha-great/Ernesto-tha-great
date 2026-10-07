@@ -1,0 +1,178 @@
+[
+  {
+    "trace": "conference-wifi",
+    "source": "synthetic",
+    "strategy": "Fire and forget",
+    "actions": 1139,
+    "exactlyOnce": 763,
+    "duplicated": 0,
+    "lost": 376,
+    "p50": 1.109,
+    "p95": 1.566
+  },
+  {
+    "trace": "conference-wifi",
+    "source": "synthetic",
+    "strategy": "Retry in memory",
+    "actions": 1139,
+    "exactlyOnce": 1045,
+    "duplicated": 94,
+    "lost": 0,
+    "p50": 1.469,
+    "p95": 250.096
+  },
+  {
+    "trace": "conference-wifi",
+    "source": "synthetic",
+    "strategy": "Durable queue, no tags",
+    "actions": 1139,
+    "exactlyOnce": 1053,
+    "duplicated": 86,
+    "lost": 0,
+    "p50": 1.431,
+    "p95": 231.956
+  },
+  {
+    "trace": "conference-wifi",
+    "source": "synthetic",
+    "strategy": "Checked luggage",
+    "actions": 1139,
+    "exactlyOnce": 1139,
+    "duplicated": 0,
+    "lost": 0,
+    "p50": 1.43,
+    "p95": 217.472
+  },
+  {
+    "trace": "data-cap",
+    "source": "synthetic",
+    "strategy": "Fire and forget",
+    "actions": 985,
+    "exactlyOnce": 466,
+    "duplicated": 0,
+    "lost": 519,
+    "p50": 0.627,
+    "p95": 1.099
+  },
+  {
+    "trace": "data-cap",
+    "source": "synthetic",
+    "strategy": "Retry in memory",
+    "actions": 985,
+    "exactlyOnce": 985,
+    "duplicated": 0,
+    "lost": 0,
+    "p50": 29.595,
+    "p95": 507.842
+  },
+  {
+    "trace": "data-cap",
+    "source": "synthetic",
+    "strategy": "Durable queue, no tags",
+    "actions": 985,
+    "exactlyOnce": 985,
+    "duplicated": 0,
+    "lost": 0,
+    "p50": 25.702,
+    "p95": 515.017
+  },
+  {
+    "trace": "data-cap",
+    "source": "synthetic",
+    "strategy": "Checked luggage",
+    "actions": 985,
+    "exactlyOnce": 985,
+    "duplicated": 0,
+    "lost": 0,
+    "p50": 29.852,
+    "p95": 510.7
+  },
+  {
+    "trace": "lift",
+    "source": "synthetic",
+    "strategy": "Fire and forget",
+    "actions": 469,
+    "exactlyOnce": 402,
+    "duplicated": 0,
+    "lost": 67,
+    "p50": 0.609,
+    "p95": 1.063
+  },
+  {
+    "trace": "lift",
+    "source": "synthetic",
+    "strategy": "Retry in memory",
+    "actions": 469,
+    "exactlyOnce": 459,
+    "duplicated": 10,
+    "lost": 0,
+    "p50": 0.698,
+    "p95": 48.07
+  },
+  {
+    "trace": "lift",
+    "source": "synthetic",
+    "strategy": "Durable queue, no tags",
+    "actions": 469,
+    "exactlyOnce": 455,
+    "duplicated": 14,
+    "lost": 0,
+    "p50": 0.698,
+    "p95": 47.3
+  },
+  {
+    "trace": "lift",
+    "source": "synthetic",
+    "strategy": "Checked luggage",
+    "actions": 469,
+    "exactlyOnce": 469,
+    "duplicated": 0,
+    "lost": 0,
+    "p50": 0.696,
+    "p95": 46.237
+  },
+  {
+    "trace": "underground-commute",
+    "source": "synthetic",
+    "strategy": "Fire and forget",
+    "actions": 1217,
+    "exactlyOnce": 432,
+    "duplicated": 0,
+    "lost": 785,
+    "p50": 0.647,
+    "p95": 1.511
+  },
+  {
+    "trace": "underground-commute",
+    "source": "synthetic",
+    "strategy": "Retry in memory",
+    "actions": 1217,
+    "exactlyOnce": 898,
+    "duplicated": 30,
+    "lost": 289,
+    "p50": 16.567,
+    "p95": 139.37
+  },
+  {
+    "trace": "underground-commute",
+    "source": "synthetic",
+    "strategy": "Durable queue, no tags",
+    "actions": 1217,
+    "exactlyOnce": 1149,
+    "duplicated": 68,
+    "lost": 0,
+    "p50": 70.243,
+    "p95": 579.69
+  },
+  {
+    "trace": "underground-commute",
+    "source": "synthetic",
+    "strategy": "Checked luggage",
+    "actions": 1217,
+    "exactlyOnce": 1217,
+    "duplicated": 0,
+    "lost": 0,
+    "p50": 52.238,
+    "p95": 553.597
+  }
+]

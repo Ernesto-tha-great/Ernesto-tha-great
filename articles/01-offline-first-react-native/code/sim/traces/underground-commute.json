@@ -1,0 +1,28 @@
+{
+  "name": "underground-commute",
+  "description": "A 20-minute underground commute: connectivity at stations, nothing in tunnels, weak signal at platform edges, one 'one bar, no data' stretch. The phone goes into a pocket twice; the second time the OS kills the app.",
+  "source": "synthetic",
+  "segments": [
+    { "seconds": 90, "state": "up", "latencyMs": 120 },
+    { "seconds": 150, "state": "down" },
+    { "seconds": 20, "state": "up", "latencyMs": 900, "lossRate": 0.4 },
+    { "seconds": 40, "state": "up", "latencyMs": 150 },
+    { "seconds": 120, "state": "down" },
+    { "seconds": 60, "state": "blackhole" },
+    { "seconds": 30, "state": "up", "latencyMs": 700, "lossRate": 0.3 },
+    { "seconds": 180, "state": "down" },
+    { "seconds": 45, "state": "up", "latencyMs": 150 },
+    { "seconds": 150, "state": "down" },
+    { "seconds": 25, "state": "up", "latencyMs": 900, "lossRate": 0.4 },
+    { "seconds": 60, "state": "up", "latencyMs": 120 },
+    { "seconds": 120, "state": "down" },
+    { "seconds": 110, "state": "up", "latencyMs": 150 }
+  ],
+  "events": [
+    { "at": 400, "type": "suspend" },
+    { "at": 520, "type": "resume" },
+    { "at": 640, "type": "suspend" },
+    { "at": 700, "type": "kill" },
+    { "at": 760, "type": "resume" }
+  ]
+}

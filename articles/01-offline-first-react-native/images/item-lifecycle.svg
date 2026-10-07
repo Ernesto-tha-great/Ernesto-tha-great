@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" width="1200" height="470" role="img" aria-labelledby="t d">
+<title id="t">Lifecycle of a queued request</title>
+<desc id="d">A request enters Queued on enqueue. When due and the probe says online, it goes In flight. From In flight it is Delivered, goes to Waiting on a network failure or a retry verdict, or goes to Dead letter when rejected or retried too often. Waiting returns to Queued when its backoff expires. A failed probe keeps the request Queued without burning an attempt.</desc>
+<style>
+  svg { --surface:#fcfcfb; --box:#ffffff; --line:#c9c8c2; --ink:#0b0b0b; --ink-2:#52514e; --accent:#2a78d6; --good:#0a7d0a; --bad:#c03434; --good-bg:#e3f4e3; --bad-bg:#fbe5e5; --wait-bg:#fdf2d6; }
+  @media (prefers-color-scheme: dark) { svg { --surface:#1a1a19; --box:#2c2c2a; --line:#4a4a46; --ink:#ffffff; --ink-2:#c3c2b7; --accent:#5598e7; --good:#3fbf3f; --bad:#e66767; --good-bg:#1e3a1e; --bad-bg:#3d2020; --wait-bg:#3a3220; } }
+  text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+  .h1 { font-size: 22px; font-weight: 700; }
+  .st { font-size: 16px; font-weight: 700; }
+  .sb { font-size: 12.5px; fill: var(--ink-2); }
+  .edge { stroke: var(--accent); stroke-width: 2; fill: none; marker-end: url(#a); }
+  .el { font-size: 12.5px; font-weight: 600; fill: var(--accent); }
+  .note { font-size: 13.5px; fill: var(--ink-2); }
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>
+<rect width="100%" height="100%" fill="var(--surface)"/>
+<text class="h1" x="40" y="48">The life of one request</text>
+
+<!-- States -->
+<rect x="140" y="190" width="210" height="76" rx="12" fill="var(--box)" stroke="var(--line)" stroke-width="1.5"/>
+<text class="st" x="160" y="222">Queued</text>
+<text class="sb" x="160" y="246">on disk, waiting until due</text>
+
+<rect x="500" y="190" width="210" height="76" rx="12" fill="var(--box)" stroke="var(--line)" stroke-width="1.5"/>
+<text class="st" x="520" y="222">In flight</text>
+<text class="sb" x="520" y="246">part of a batch</text>
+
+<rect x="900" y="80" width="250" height="76" rx="12" fill="var(--good-bg)"/>
+<text class="st" x="920" y="112" style="fill:var(--good)">Delivered</text>
+<text class="sb" x="920" y="136">removed from disk</text>
+
+<rect x="900" y="300" width="250" height="76" rx="12" fill="var(--bad-bg)"/>
+<text class="st" x="920" y="332" style="fill:var(--bad)">Dead letter</text>
+<text class="sb" x="920" y="356">removed; app is told why</text>
+
+<rect x="500" y="350" width="210" height="76" rx="12" fill="var(--wait-bg)"/>
+<text class="st" x="520" y="382">Waiting</text>
+<text class="sb" x="520" y="406">backoff with full jitter</text>
+
+<!-- Edges -->
+<path class="edge" d="M30 228 H136"/>
+<text class="el" x="40" y="218">enqueue()</text>
+
+<path class="edge" d="M350 228 H496"/>
+<text class="el" x="362" y="218">due + online</text>
+
+<path class="edge" d="M200 190 C 200 120, 290 120, 290 186"/>
+<text class="el" x="150" y="104">probe: offline or captive portal</text>
+<text class="sb" x="150" y="122">wait; no attempt is burned</text>
+
+<path class="edge" d="M710 210 C 800 210, 820 118, 896 118"/>
+<text class="el" x="760" y="160">delivered</text>
+
+<path class="edge" d="M710 246 C 800 246, 820 338, 896 338"/>
+<text class="el" x="740" y="372">rejected, or "retry"</text>
+<text class="el" x="740" y="388">too many times</text>
+
+<path class="edge" d="M605 266 V346"/>
+<text class="el" x="614" y="300">network failure,</text>
+<text class="el" x="614" y="316">429 / 5xx, "retry"</text>
+
+<path class="edge" d="M500 388 H245 V270"/>
+<text class="el" x="300" y="378">nextAttemptAt reached</text>
+
+<text class="note" x="40" y="455">Network failures never dead-letter a request. Only the server's own verdicts can.</text>
+</svg>
