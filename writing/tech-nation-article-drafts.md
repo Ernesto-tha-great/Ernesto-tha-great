@@ -1,6 +1,6 @@
 # Ten article drafts for a Tech Nation evidence trail
 
-Ernest Nnamdi · Developer Relations Engineer · v3 · October 2026
+Ernest Nnamdi · Developer Relations Engineer · v4 · October 2026
 
 **The through-line:** *reliable software built on unreliable parts*. The unreliable parts are flaky networks, strangers' servers, non-deterministic models, and developers who don't come back. Ten unrelated topics read like a content calendar. One theme, attacked from ten angles, reads like expertise.
 
@@ -12,7 +12,7 @@ Ernest Nnamdi · Developer Relations Engineer · v3 · October 2026
 
 ## 1. Treat Every Request Like Checked Luggage
 
-**Subtitle:** Testing offline-first React Native against network traces recorded on trains, in lifts and on conference Wi-Fi.
+**Subtitle:** A failure taxonomy for offline-first React Native, tested against real commute traces.
 
 **Description:** Checked luggage gets a tag, waits for the next flight if it misses one, and should never arrive twice. That's the whole job of an offline request queue:
 
@@ -21,16 +21,19 @@ Ernest Nnamdi · Developer Relations Engineer · v3 · October 2026
 - survive the dropped connection
 - retry without double-charging anyone
 
-I recorded network traces in the places mobile apps actually break: underground trains, lifts, packed venues, captive-portal Wi-Fi, and phones that have hit their data cap while NetInfo still says "connected". Then I replayed the traces against four offline strategies in React Native. The piece shows:
+I replayed recorded mobile traces from underground trains, lifts and packed venues against four offline strategies in React Native, using Mahimahi for replay. The traces build on earlier public commute datasets such as Riiser et al., MMSys 2013. I also scripted two failures that no trace captures: captive-portal Wi-Fi, and phones that have hit their data cap while NetInfo still says "connected".
 
-- which strategies survived
-- why per-item idempotency keys (the luggage tag) only work if the server honours them
-- what happens to your backoff timers when iOS suspends the app
-- how to handle a batch where three requests succeed and two don't
+The piece sorts what broke into a taxonomy:
+
+- per-item idempotency keys (the luggage tag) only work if the server honours them
+- backoff timers die when iOS suspends the app
+- batches partly succeed
+
+Where the analogy breaks: a retry doesn't move the bag. It copies it, and only the tag reveals the copy.
 
 **Platform:** Smashing Magazine. Send an outline first; an article needs two positive reviews to publish.
-**Build first:** publish the traces as a dataset with a DOI, so other people can cite them, and an open-source replay harness. The data is the contribution.
-**Tech Nation:** OC2, provided the dataset and harness are personal work, not your employer's.
+**Build first:** the failure taxonomy and an open-source replay harness. Publish any traces you record yourself as a dataset with a DOI.
+**Tech Nation:** OC2, provided this is personal work, not your employer's.
 
 ---
 
@@ -67,7 +70,7 @@ The argument is about ownership: platform and DevRel teams should be judged on t
 
 **Platform:** LeadDev, London-based. Its audience is engineering leaders, so frame the piece around their decisions and what they cost the team.
 **Build first:** an open spec and instrumentation template for the metric, plus the 25-API onboarding benchmark, published independently.
-**Tech Nation:** writing about DevRel is your day job, so the article alone won't count as OC2. The public benchmark and spec can, especially if other teams adopt or cite the term. Follow it with a talk at DevRelCon or LeadDev London.
+**Tech Nation:** writing about DevRel is your day job, so the article alone won't count as OC2. The public benchmark and spec can, especially if other teams adopt or cite the term.
 
 ---
 
@@ -75,7 +78,7 @@ The argument is about ownership: platform and DevRel teams should be judged on t
 
 **Subtitle:** What it costs to open the web's most-used apps, priced in mobile data across 50 countries.
 
-**Description:** Developers talk about bundle size in kilobytes. Users pay for it in money, and the price of a gigabyte varies enormously by country. Using published per-gigabyte mobile data prices (from ITU and cable.co.uk's annual comparison), I measured what a first load and a repeat visit cost for 50 widely used web apps. I also measured how much of that cost is JavaScript the user never runs.
+**Description:** Developers talk about bundle size in kilobytes. Users pay for it in money, and the price of a gigabyte varies enormously by country. Using one consistent source of per-gigabyte mobile data prices (cable.co.uk's latest worldwide comparison), I measured what a first load and a repeat visit cost for 50 widely used web apps. I also measured how much of that cost is JavaScript the user never runs. I report each cost two ways: in money, and as a share of income (GNI per capita).
 
 The piece names the heaviest apps and shows the three fixes that saved the most money per kilobyte. It argues that teams should set performance budgets in currency as well as milliseconds. It builds on Tim Kadlec's What Does My Site Cost?, extended to apps, caching and unused code.
 
@@ -110,169 +113,197 @@ It promises at-least-once delivery, never "never lost". Every chapter ends with 
 
 # Part 2: AI startups (6–10)
 
-**The rule for these five:** write as an independent tester. Don't let the company approve the piece before it runs, disclose any relationship, and publish what broke as well as what worked. That independence is what makes these pieces count for Tech Nation. It is also what a DevRel hiring manager wants to see: someone who can find the rough edges in their product and explain them kindly.
+## Ground rules for these five
 
-**Hiring signals** (checked 7 October 2026 via job aggregators; confirm on each careers page before applying):
+**Problem first, product second.** Each title names an engineering problem. Each test harness runs on at least two tools, and the startup's product is one of them. Five pieces about five companies that happen to be hiring would read like reviews and job-hunting. Five pieces about agent reliability that test real products read like research.
 
-| Company | Role | Posted | Where |
-|---|---|---|---|
-| Tessl | Member of DevRel Staff – Developer Advocate | 3 Sep 2026 (republished 21 Sep) | London (also Bay Area and New York variants) |
-| LiveKit | Senior Developer Advocate, Social | 1 Sep 2026 | US remote |
-| LiveKit | Staff Developer Advocate, Community & Events | 3 Jul 2026 | US |
-| Arize AI | Developer Relations Education Engineer | 27 Aug 2026 | San Francisco Bay Area |
-| Mastra | Product Advocate, Developer GTM | 19 Aug 2026 | Remote |
+**Write as an independent tester.** Don't let the company approve the piece before it runs, and publish what broke as well as what worked.
 
-DataGrip is a JetBrains product rather than a startup, so it's here because you asked for it, not because of a hiring signal. If you meant **Datagrid**, the San Francisco AI-agents startup, say so and I'll swap the pitch.
+**Conflict-of-interest rule:**
 
-Caveats on the other roles:
+- **Disclose.** If you've applied to the company, say so in the piece, for example: "I've applied to X; they didn't review this."
+- **Publish before your start date.** If you're hired, anything you write about that company's product after you start is day-job content: OC3 at best, never OC2. Your new colleagues also stop counting as outside referees.
+- **Keep repos on your personal GitHub account.**
+- **Keep the "hiring angle" notes below out of your Tech Nation application.**
 
-- **Mastra:** this role is sales-leaning, but the listing names developer relations as a growth path. Mastra also has a Founding Developer Marketer opening, with about 80% of the time spent on developer content.
-- **Alternates if you'd rather swap one out:**
-  - ElevenLabs has a remote Developer Relations Engineer role, but the newest dated copy is from June 2026.
-  - Vercel has a Senior Developer Advocate, AI role, posted around August 2026.
+### Hiring signals
+
+Checked 7 October 2026 via job aggregators. Confirm each role on the company's careers page before applying.
+
+| Company | Role | Posted | Location / right to work | Your odds |
+|---|---|---|---|---|
+| Tessl | Member of DevRel Staff – Developer Advocate | 3 Sep 2026 (republished 21 Sep) | London; you need UK right to work now, so ask whether they sponsor visas | Strong fit; London |
+| Mastra | Founding Developer Marketer; Product Advocate, Developer GTM (19 Aug) | Aug 2026 | Remote, Americas or Europe time zones | Best odds, but one job board marks the Marketer role filled, so confirm both |
+| Arize AI | Developer Relations Education Engineer | 27 Aug 2026 | Bay Area per the main listing, remote per a Wellfound copy; ask which | Plausible; wants recorded talks, videos or courses |
+| LiveKit | Senior Developer Advocate, Social | 1 Sep 2026 | US only | Long shot: the role runs their social channels and needs a proven audience |
+
+DataGrip is a JetBrains product with no DevRel hiring signal. It's here because you asked for it. If you meant **Datagrid**, the San Francisco AI-agents startup, say so and I'll swap the pitch.
+
+### Two-week proof kits
+
+These go out with your applications, before any article runs:
+
+| Company | Kit |
+|---|---|
+| Tessl | A Standard Webhooks skill published to their registry, with task-eval results; a 5-minute video; 2–3 docs PRs; a talk proposal to AI Native DevCon |
+| Mastra | A template for their gallery; a 3-minute demo; a week of answering questions in their Discord |
+| Arize AI | A recorded 20-minute workshop; a learner repo set up for coding agents (an AGENTS.md file and Phoenix's MCP server); a TypeScript docs PR |
+| LiveKit | A voice agent people can actually call; a 60-second latency clip; a social thread; a PR to the agents-js examples |
 
 ---
 
 ## 6. Sheet Music for Robots
 
-**Subtitle:** I wrote one spec for a webhook library, had three agents perform it five times each, and measured the drift.
+**Subtitle:** How much spec does it take before every agent plays the same piece? Prose, examples and executable tests, measured with Tessl skills and GitHub Spec Kit.
 
-**Description:** Tessl, the London startup founded by Snyk's Guy Podjarny, is betting that the spec, not the code, becomes the source of truth. If that's right, a spec is sheet music, the code is a performance, and every coding agent is a different orchestra.
+**Description:** If the spec becomes the source of truth, as Tessl (the London startup founded by Snyk's Guy Podjarny) is betting, then a spec is sheet music and code is a performance. A prose spec is a lead sheet that every player interprets differently. Worked examples are like a recording to copy. Executable tests are the full score.
 
-I took the reference library from article 5, wrote its spec once, and had it implemented three ways:
+I wrote the webhook library from article 5 three ways: as prose, then as prose plus examples, then as prose plus executable tests. I kept the coding agent and model fixed. Each spec was implemented five times:
 
-- by an agent using Tessl's registry and spec-first workflow
-- with GitHub's Spec Kit
-- by plain prompting
+- with Tessl's spec-driven-development skill from their registry
+- with GitHub Spec Kit
+- with neither
 
-I regenerated each implementation five times. Then I measured:
+For each run I measured test pass rate, churn between regenerations, and token cost.
 
-- test pass rate
-- how much the code churned between regenerations
-- which ambiguities the spec failed to pin down
-- what each run cost in tokens
+This builds on Birgitta Böckeler's comparison of Kiro, Spec Kit and Tessl on martinfowler.com. Her piece compared tools. This one asks how much spec stops drift, a question that will outlive anyone's product pivot. Where the analogy breaks: musicians don't silently invent a missing bar. Agents do.
 
-Where the analogy breaks: musicians don't silently invent a missing bar. Agents do.
-
-**Platform:** InfoQ (AI, ML & Data Engineering). It already runs an active spec-driven development topic, so pitch the experiment, not the explainer.
-**Build first:** publish the spec as a public package in Tessl's registry, plus the harness and the raw regeneration diffs.
+**Platform:** InfoQ (AI, ML & Data Engineering). It already runs a spec-driven development topic, so pitch the experiment, not the explainer.
+**Build first:** the harness and raw diffs. Publish the webhook spec as a public skill in Tessl's registry, and run Tessl's task evals (the same task run with and without the skill) across Cursor, Codex and GitHub Copilot.
+**Note:** Tessl's spec-to-code product isn't publicly available (reports say it's in closed beta or paused), so test only what readers can reproduce.
 **Tech Nation:** OC2. Tessl's London base also shows you engaging with the UK ecosystem.
-**Hiring angle:** the London DevRel role mentions building out Tessl Academy, their learning hub. A rigorous, slightly sceptical experiment is exactly the kind of teaching content that hub needs.
 
 ---
 
-## 7. Give Your Agent the Valet Key
+## 7. Give Your Agent a Visitor Badge
 
-**Subtitle:** Benchmarking DataGrip's new agent skills for text-to-SQL, on a database I was prepared to lose.
+**Subtitle:** Least-privilege database access for AI agents, and a text-to-SQL benchmark of DataGrip's new agent skills.
 
-**Description:** A valet key starts the car but won't open the boot. That is roughly the access an AI agent should have to your database.
+**Description:** A visitor badge opens specific rooms for a set time, with an escort, and every door logs you. That's what an AI agent's database access should look like:
 
-DataGrip 2026.2 ships three agent skills: connection management, text-to-SQL, and database tools. JetBrains says they make agents more accurate while using fewer tokens. I tested that claim with the same agent and the same 150 questions from a public text-to-SQL benchmark, run once with the skills and once without, measuring execution accuracy and token use.
+- views instead of tables
+- `REVOKE TEMP`
+- a `statement_timeout`
+- consent prompts as the escort
+- an audit log
 
-Then I tested the part nobody benchmarks: what the agent tries to do with a write-capable connection, and which guardrails actually stop it. The candidates are read-only roles, the IDE's consent prompts, statement timeouts and transaction rollbacks. Where the analogy breaks: a valet can still crash the car. A read-only agent can still run the query that takes your database down, and only a timeout stops it.
+The piece opens with that role template. JetBrains' own docs admit the IDE's consent prompts don't guarantee read-only access, so the template is not optional.
 
-**Platform:** Towards Data Science. Its editors ask for new methods or underserved areas, which this is.
-**Build first:** the benchmark harness and results, plus a minimal "agent-safe" Postgres role template.
+Then comes the benchmark. DataGrip 2026.2 ships three agent skills (connection management, text-to-SQL and database tools), and JetBrains says they improve accuracy while using fewer tokens. The skills only run inside DataGrip's AI chat; external agents get its MCP tools instead. So I ran about 300 chat sessions on my own API key: a corrected subset of BIRD Mini-Dev (the original has known annotation errors), with and without the skills, logging execution accuracy and tokens.
+
+Where the analogy breaks: a visitor can still memorise what they saw. Every row an agent reads goes to a model provider, so the views, not the badge, decide what leaves the building.
+
+**Platform:** Towards Data Science. Its editors ask for new methods or underserved areas.
+**Build first:** the Postgres role template and the benchmark harness.
 **Tech Nation:** OC2.
 
 ---
 
 ## 8. Wait, Let Me Finish
 
-**Subtitle:** Where the half-second goes in a voice agent, measured end to end with LiveKit Agents for Node.js and a React Native client.
+**Subtitle:** Mouth-to-ear latency for a voice agent on a phone, over the same bad networks from article 1.
 
-**Description:** Across ten languages, people take turns with gaps of a fraction of a second (Stivers et al., PNAS 2009). Voice agents miss that window in both directions: they either cut into your pause or leave you hanging.
+**Description:** In a ten-language study of answers to yes/no questions, the most common gap between turns was 0–200 ms (Stivers et al., PNAS 2009). Voice agents miss that window in both directions: they either cut into your pause or leave you hanging.
 
-I built the same agent in LiveKit Agents for Node.js, with a React Native client, and timed every hop from the end of the user's speech to the first audio frame back:
+Server-side numbers are well covered. LiveKit publishes its own end-of-turn benchmark, and agents-js already reports endpointing delay. What nobody shows is the user's side: the time from the end of your speech to the first sound you hear, on a real phone.
 
-- endpointing delay
-- speech-to-text finalisation
+I built an agent in LiveKit Agents for Node.js with a React Native client. I measured that mouth-to-ear time hop by hop:
+
+- endpointing
+- speech-to-text
 - model time to first token
-- text-to-speech time to first byte
-- network transport
+- text-to-speech
+- transport
 
-Then I compared silence-based endpointing with LiveKit's audio turn-detector model at different minimum and maximum delays. I scored each setup on LiveKit's open end-of-turn benchmark, reporting p50/p95 latency and how often the agent interrupted.
+I took the measurements on good Wi-Fi, then over the commute traces from article 1. I compared LiveKit's turn-detector model (v1-mini when self-hosted) with plain silence detection, and reported p50/p95 latency and false cut-ins. The piece leads with what the delays feel like to the user, and the engineering follows.
 
-**Platform:** Smashing Magazine. The piece is conversational UX as much as engineering, and the client is React Native.
-**Build first:** an open-source latency-tracing kit that others can run on their own LiveKit agents. Send any fixes to their docs or examples upstream.
+**Platform:** Smashing Magazine. Lead with conversational UX; the React Native client is the hook.
+**Build first:** a client-side latency-tracing kit for React Native. Pin your agents-js version: the docs say dynamic endpointing is Python-only, but a forum post says agents-js 1.4.3 added it, so verify before you rely on it. Send fixes upstream as PRs.
 **Tech Nation:** OC2. Merged PRs to LiveKit's repos are third-party validation.
-**Hiring angle:** the open Social role asks for someone "deep in the agentic AI world" who has built a voice agent. This is that, with receipts.
 
 ---
 
-## 9. Who Marks the Examiner?
+## 9. Someone Replaced the Examiner
 
-**Subtitle:** I hand-labelled 300 agent traces to see how often an LLM judge agrees with a human, using Arize Phoenix on a TypeScript agent.
+**Subtitle:** Measuring LLM-as-judge drift across model updates, against two human markers, with Arize Phoenix.
 
-**Description:** LLM-as-judge is now the default way to evaluate agents. But the judge is also a language model, with the position, verbosity and self-preference biases documented in the MT-Bench paper (Zheng et al., 2023).
+**Description:** Exam boards keep markers honest with moderation: re-mark a sample of their papers, then adjust. Exam boards also don't swap the examiner overnight. Model providers do it every few months, and an eval suite that passed in March can quietly mean something else by June.
 
-Exam boards solved this decades ago with moderation: re-mark a sample of each marker's papers, then adjust. This piece does the same:
+I traced a TypeScript support agent with Phoenix and used Phoenix's annotation tools to collect labels:
 
-- trace a TypeScript support agent with Phoenix
-- hand-label 300 traces
-- measure agreement between the human labels and the judges (Cohen's kappa) across judge models, rubric styles, and pairwise versus pointwise grading
+- I hand-labelled 300 traces.
+- A second person labelled 100 of them, so the judges have a human-versus-human baseline to beat.
 
-It publishes the labelled set and a moderation loop you can run on your own judges. Where the analogy breaks: exam markers don't change overnight, but a judge does every time its provider ships a model update.
+Then I ran three or four judge configurations, including Phoenix's built-in eval templates, across successive versions of the same judge models. For each version I tracked agreement with the humans (Cohen's kappa, with confidence intervals) and which verdicts flipped.
+
+The biases matter here:
+
+- Position bias only affects pairwise grading, so these judges grade one answer at a time, with no comparison.
+- Verbosity bias is documented in the MT-Bench paper (Zheng et al., 2023).
+- Self-preference is better evidenced in Panickssery et al. (NeurIPS 2024).
+
+The piece cites Shankar et al.'s "Who Validates the Validators?" (UIST 2024) and extends it over time.
 
 **Platform:** Towards Data Science.
-**Build first:** the labelled dataset (with a DOI) and the moderation-loop code. Contribute any TypeScript gaps you hit back to Phoenix, which is open source.
+**Build first:** the labelled dataset (with a DOI) and a re-runnable drift check, plus any TypeScript gaps you hit, contributed back to Phoenix.
 **Tech Nation:** OC2.
-**Hiring angle:** the Education Engineer role is about teaching developers to evaluate well, and this is a ready-made course module.
 
 ---
 
 ## 10. Your Agent Is a Distributed System Now
 
-**Subtitle:** Chaos-testing a TypeScript agent with Mastra: rate limits, timeouts, and the tool call that sent the email twice.
+**Subtitle:** Counting duplicate side effects when TypeScript agents crash mid-run: Mastra, the AI SDK and LangGraph.js under the same chaos tests.
 
-**Description:** An agent loop is a distributed system in which one participant is non-deterministic and every tool call is a side effect. When the model times out halfway through, does your agent retry the tool call that already emailed the customer?
+**Description:** An agent loop is a distributed system in which one participant is non-deterministic and every tool call is a side effect. When the process dies halfway through, does your agent re-send the email it already sent?
 
-I built a TypeScript support agent with Mastra and injected failures:
+I gave the same support agent to three TypeScript stacks, each in its recommended production setup:
 
-- 429 rate-limit errors
-- provider timeouts
-- malformed tool output
-- process restarts mid-run
+- Mastra, with persistent storage, step-level retries (off by default) and its opt-in durable recovery
+- Vercel's AI SDK
+- LangGraph.js, with a checkpointer
 
-I compared a naive agent loop with Mastra workflows that use step-level retries, suspend/resume and idempotent tool design, measuring completion rate and duplicate side effects. It's article 5 again, except the stranger is your own model.
+Then I injected the same failures into each: 429 rate-limit errors, provider timeouts, malformed tool output, and process kills mid-run. For each stack I counted completed runs and duplicate side effects.
 
-**Platform:** LeadDev. Frame it for tech leads: what to demand from an agent framework before it touches production.
-**Build first:** the chaos harness as an open-source package that works with any TypeScript agent framework, not just Mastra.
+Temporal, Inngest and Restate have argued for durable agents in general. This piece is the cross-framework count for TypeScript. It's article 5 again, except the stranger is your own model.
+
+**Platform:** LeadDev. Lead with the decision a tech lead faces: what to demand from an agent framework before it touches production.
+**Build first:** the chaos harness as an open-source package that works with any TypeScript agent framework.
 **Tech Nation:** OC2.
-**Hiring angle:** Mastra's whole pitch is TypeScript agents that survive production. Showing where they do, and where they don't, is developer-marketing content with a spine.
 
 ---
 
 ## Order of play
 
-Each AI piece goes stale fast, and the hiring windows are open now, so build the AI artefacts first. Don't publish the full articles on your own Substack, though. Smashing and Towards Data Science want unpublished work, and so will the others. Send hiring managers the artefact and a short lab-notes post instead, and save the full article for the editorial venue.
-
 | When | What |
 |---|---|
-| Now | Start your Substack (your sample bank and sustained record). Build the Tessl, LiveKit and Arize artefacts. Post short lab notes on each, and send them with your applications. |
-| Month 1 | Apply to freeCodeCamp with your Substack samples. Pitch **#6** to InfoQ. |
-| Month 2 | **#5** (freeCodeCamp) and **#9** (Towards Data Science). |
-| Month 3 | **#8** outline to Smashing. |
+| Weeks 0–2 | Start your Substack, which becomes your sample bank and sustained record. Build the proof kits for **Tessl and Mastra first** (best odds), then Arize; LiveKit only if you can work in the US. |
+| Month 1 | Apply to freeCodeCamp with your Substack samples. Pitch **#6** to InfoQ. Send talk proposals to AI Native DevCon and local meetups. |
+| Month 2 | **#5** (freeCodeCamp) and **#9** (Towards Data Science). Give your first meetup talk. |
+| Month 3 | **#8** outline to Smashing. Pitch **#10** to LeadDev. |
 | Month 4 | **#7** (Towards Data Science). **#1** outline to Smashing. |
-| Months 5–6 | **#10** (LeadDev) and **#4** (freeCodeCamp), then pitch #4's findings to reporters and podcasts. |
-| Month 7 | **#3** (LeadDev), followed by a talk proposal. |
+| Months 5–6 | **#4** (freeCodeCamp), then pitch its findings to reporters and podcasts. |
+| Month 7 | **#3** (LeadDev). |
 | Month 8 | **#2** (InfoQ), once your employer has signed off. |
 | Month 12+ | Apply, once there are at least 6 months of follow-on signals. |
 
-Publish roughly one piece a month, never two in the same fortnight. Ten pieces landing in one quarter would read as manufactured for the application.
+**Pacing:** publish roughly one piece a month, never two in the same fortnight.
 
-**Platform spread:** two pieces each at Smashing, InfoQ, LeadDev, freeCodeCamp and Towards Data Science. Every one of them has editors who review before publishing, which Tech Nation's 2025 guidance treats as essential. Self-published Medium and LinkedIn posts carry little weight.
+**Expect rejections:** starting from zero bylines, 6–7 acceptances out of 10 pitches is a good result. Re-pitch the rejected ones elsewhere; don't bunch them up.
+
+**Platform spread:** two pieces each at Smashing, InfoQ, LeadDev, freeCodeCamp and Towards Data Science. All five have editors who review before publishing, which Tech Nation's 2025 guidance treats as essential.
 
 **Keep an evidence log from day one.** Record each signal with its date and a screenshot:
 
 - npm dependents and GitHub forks
-- merged upstream PRs (Standard Webhooks, LiveKit, Phoenix)
+- merged upstream PRs (Standard Webhooks, LiveKit, Phoenix, Tessl's registry)
 - pickups in newsletters such as JavaScript Weekly, React Status and GraphQL Weekly
 - citations of your datasets
 - translations
-- invited talks and podcasts
+- talks and podcasts
 
 Two of your three recommendation letters should come from people outside your company who used your work.
+
+**Mandatory criterion:** this plan doesn't secure it yet. That criterion needs coverage *about* you, and right now that rests on hoped-for press for #4. Talks, podcast interviews and newsletter features about your tools all count towards it, so chase them from month 2.
 
 **Expect Exceptional Promise, not Talent.** You don't have a publication record yet, so Promise is the realistic route. This plan is built for it.
 
@@ -296,12 +327,20 @@ Don't borrow his signatures: "An African X's Guide to…" framing, "Look, I get 
   - unified the theme
   - added a "build first" artefact to every pitch
   - split evidence between OC2 and OC3
-  - fixed the technical errors (DataLoader, persisted queries, NetInfo, iOS suspension, webhook safeguards)
-  - dropped LogRocket (guest programme closed) and DigitalOcean (paused to new authors)
+  - fixed the technical errors
+  - dropped two closed platforms (LogRocket and DigitalOcean)
   - cut the account-abstraction pitch
 - **v2 → v3** (your feedback):
-  - removed every Nigeria-specific framing; Justin Irabor is now a style reference only
-  - replaced the danfo analogy with checked luggage
-  - widened the naira study to 50 countries
-  - replaced TechCabal with freeCodeCamp
-  - added five AI-startup pieces (Tessl, DataGrip, LiveKit, Arize AI, Mastra), choosing the last three for DevRel hiring since July 2026
+  - removed the Nigeria-specific framing
+  - added five AI-startup pieces, choosing the last three for DevRel hiring since July 2026
+- **v3 → v4** (technical fact-checker; DevRel hiring-manager panel and Tech Nation assessor):
+  - made the AI pieces problem-first, with each one testing at least two tools
+  - added a conflict-of-interest rule, a right-to-work column and two-week proof kits
+  - **#6:** now tests how much spec stops drift, using Tessl's public skills rather than its closed spec-to-code beta
+  - **#7:** replaced the inverted valet-key analogy; the skills now run inside the IDE, on a corrected benchmark
+  - **#8:** now measures the client side and drops the setup scoring that only LiveKit's own benchmark can do
+  - **#9:** added a second human marker; the headline is now judge drift; the bias citations are corrected
+  - **#10:** no more straw-man baseline; compares three frameworks, each in its production setup
+  - **#1:** now uses Mahimahi to replay the traces
+  - **#4:** now uses a single price source plus affordability
+  - moved talks earlier and set realistic acceptance expectations
