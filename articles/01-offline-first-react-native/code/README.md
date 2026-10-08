@@ -1,70 +1,50 @@
-# checked-luggage
+# Offline write queue for React Native
 
-A small write queue for React Native that makes sure every request reaches your server **exactly once**, even on trains, in lifts and on hotel Wi-Fi. It also ships a simulator that puts it through all three, so you can check that claim yourself.
+This is the finished code for my tutorial, **[Offline-First in Practice: Building a Write Queue for React Native With TypeScript](https://github.com/Ernesto-tha-great/Ernesto-tha-great/blob/main/articles/01-offline-first-react-native/article.md)**.
 
-This is the companion code for my article **Offline-First React Native: Building a Write Queue That Survives Bad Networks**.
+If you're following along, build it from the article, step by step. This repo is here so you can check your work, or skip ahead.
 
-![How a request travels from tap to server](./docs/images/architecture.svg)
+![Without an idempotency key, a retry after a lost response creates a second order. With one, the server sends back the saved reply.](docs/images/lost-response.svg)
 
-## The idea in one paragraph
+## Run it
 
-Treat every request like checked luggage. Write it to disk before telling the user it's saved (the receipt). Give it an idempotency key when it's created (the tag). Retry it with jittered backoff when it misses a flight. And have the server check the tag before doing any work, so a retried copy is never delivered twice.
-
-## Quick start
-
-You need Node 20 or newer.
+You need Node.js 20 or newer.
 
 ```bash
 git clone https://github.com/Ernesto-tha-great/checked-luggage.git
 cd checked-luggage
 npm install
 
-npm test          # 19 tests, including lost responses over real HTTP
-npm run bench     # runs 4 bad-network scenarios against 4 approaches, 25 seeds each
-npm run chart     # redraws docs/images/results.svg from the results
-npm run server    # demo orders API on http://localhost:8787
+npm run server        # an orders API on :8787 that sometimes hangs up after saving
+npm run naive         # fetch + retries: watch the duplicates pile up
+npm run with-keys     # the same, with idempotency keys
+npm run orders -- 5   # the queue: save 5 orders, then send what it can
+npm run chaos         # all three approaches through one bad afternoon
+npm test              # 9 tests
 ```
 
-Want the server to misbehave? `DROP_RESPONSE_RATE=0.5 npm run server` makes it do the work and then hang up on half the requests. Add `IGNORE_KEYS=1` to see what happens without idempotency keys. (Spoiler: duplicates.)
+`npm run chaos` should print this (it's seeded, so the numbers don't change):
+
+```text
+┌─────────┬─────────────────────────────┬──────┬────────────┬─────────────┐
+│ (index) │ name                        │ lost │ duplicated │ exactlyOnce │
+├─────────┼─────────────────────────────┼──────┼────────────┼─────────────┤
+│ 0       │ 'fetch + 3 retries'         │ 50   │ 15         │ 35          │
+│ 1       │ 'retries + idempotency key' │ 50   │ 0          │ 50          │
+│ 2       │ 'the queue'                 │ 0    │ 0          │ 100         │
+└─────────┴─────────────────────────────┴──────┴────────────┴─────────────┘
+```
 
 ## What's in here
 
 ```text
-src/          the library: OfflineQueue, HTTP transport, reachability probe, storage adapters
-server/       demo orders API that checks idempotency keys before doing any work
-sim/          a deterministic network simulator, plus the four approaches it compares
-sim/traces/   the scenarios: underground commute, office lift, conference Wi-Fi, out of data
-bench/        runs every scenario against every approach and draws the chart
-test/         unit tests, plus end-to-end tests over real HTTP
-example/      an Expo app wired up to the queue
+server/         the orders API, with idempotency keys
+src/            the queue: queue.ts, storage.ts, backoff.ts, probe.ts
+scripts/        naive.ts, with-keys.ts, place-orders.ts, chaos.ts
+test/           unit tests
+expo-example/   the React Native side: App.tsx and lib/ (copy src/queue.ts, backoff.ts and probe.ts into lib)
 ```
 
-## Results
+## License
 
-![Delivery outcomes per scenario and approach](./docs/images/results.svg)
-
-These come from the simulator, not from recordings of real phones. Every number is reproducible with `npm run bench`. To add your own scenario, drop a JSON file in a folder (the format is documented in `sim/trace.ts`) and run `npm run bench -- ./your-folder`.
-
-## Use it in your app
-
-```ts
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Crypto from 'expo-crypto';
-import { OfflineQueue, createHttpTransport, createKeyValueStorage, createReachabilityProbe } from 'checked-luggage';
-
-export const queue = new OfflineQueue({
-  storage: createKeyValueStorage(AsyncStorage),
-  transport: createHttpTransport({ baseUrl: API_URL }),
-  probe: createReachabilityProbe({ url: `${API_URL}/generate_204` }),
-  createId: () => Crypto.randomUUID(),
-});
-
-await queue.enqueue({ method: 'POST', path: '/orders', body: { sku: 'SKU-1', qty: 1 } });
-await queue.flush();
-```
-
-Your server needs two endpoints: `POST /batch`, which returns one verdict per item, and `GET /generate_204`. `server/core.ts` shows the contract, and the article shows the Postgres version. For a full app, see [`example/`](./example).
-
-## Licence
-
-MIT. Break it, and tell me how.
+MIT

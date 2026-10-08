@@ -1,16 +1,9 @@
 /**
- * Exponential backoff with "full jitter": pick a random delay between zero and
- * the exponential ceiling. Spreading retries out stops every phone on the train
- * from hammering your API in the same second the train leaves the tunnel.
- *
- * See Marc Brooker, "Exponential Backoff And Jitter", AWS Architecture Blog (2015).
+ * Exponential backoff with full jitter: wait a random time between zero and
+ * an exponentially growing ceiling. The randomness spreads retries out, so a
+ * thousand phones coming out of the same tunnel don't hit your API together.
  */
-export function fullJitterDelay(
-  attempt: number,
-  baseMs: number,
-  capMs: number,
-  random: () => number = Math.random,
-): number {
-  const ceiling = Math.min(capMs, baseMs * 2 ** Math.max(0, attempt - 1));
+export function backoff(attempt: number, baseMs = 1_000, capMs = 60_000, random = Math.random): number {
+  const ceiling = Math.min(capMs, baseMs * 2 ** (attempt - 1));
   return Math.floor(random() * ceiling);
 }

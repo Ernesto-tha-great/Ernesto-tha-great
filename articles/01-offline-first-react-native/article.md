@@ -1,226 +1,881 @@
-# Offline-First React Native: Building a Write Queue That Survives Bad Networks
+# Offline-First in Practice: Building a Write Queue for React Native With TypeScript
 
-*Treat every request like checked luggage: tag it, queue it, and make sure it never arrives twice.*
+*Bad connections make mobile apps lose some requests and send others twice. In this tutorial, we build a small queue that fixes both, one step at a time.*
 
-**Ernest Nnamdi** · React Native · TypeScript · Networking
+**Ernest Nnamdi** · React Native · TypeScript · Node.js
 
 ---
 
-A while back I built a small order-taking app for a sales team. It worked perfectly on my desk, which, in hindsight, is the least interesting place a mobile app will ever run.
+When I was building the mobile app at Groupify, we shipped fast: seven versions in about a year. Somewhere along the line, a user sent us a screenshot of something they had created showing up twice, identical in every way. A few days later, someone else reported that something they had created never showed up at all.
 
-The first bug report was a screenshot from a train: two identical orders, same customer, same minute. The second, from a different rep that same week, was an order that never showed up at all. Opposite bugs, same app. I spent a weekend convinced the backend was haunted.
+I spent an embarrassing amount of time looking for a bug in our GraphQL resolvers. They were fine. The TL;DR of the issue was that our users were saving things on bad connections. Sometimes the request reached our server, the record got created, and the response died somewhere on its way back to the phone. The app showed an error, so the user did what any reasonable human would do and tapped "Save" again. Other times, the request never left the phone at all, and once the app was closed, it was gone for good.
 
-Reader, the backend was not haunted. The phone was doing exactly what phones do on trains, and my code was treating the network like a function call: send a request, get an answer. On a phone, the network behaves more like a postal service run by someone having a bad week. Requests vanish in tunnels. *Responses* vanish on the way back. Hotel Wi-Fi answers everything with a cheerful `200 OK` and a login page. And iOS will happily freeze your app halfway through a retry loop, then kill it to free up memory.
+I knew about offline-first apps and idempotency in theory. I could even explain both in an interview. But I had never actually needed either, because everything I'd built until then had been tested on office Wi-Fi.
 
-Most "offline-first" advice is about reads: cache the data and show something while the network sulks. Writes are the harder half, because a write has to happen **exactly once**, and the network gives you no way of knowing whether it already did.
+In this tutorial, I'm going to show you how to build a small write queue for React Native that fixes both problems: requests that get lost, and requests that get sent twice. We'll build and test everything in Node.js first, so you don't need a phone to follow along, and then we'll plug it into an Expo app at the end.
 
-So this article is about writes. We're going to build a small write queue for React Native, called `checked-luggage`. Then we'll run it, and three simpler approaches, through a simulator that recreates the kinds of bad networks your users walk into every day, to see which approach survives what.
+### Okay, but what's wrong with fetch and a retry?
 
-Everything here is in the companion repo, [**github.com/Ernesto-tha-great/checked-luggage**](https://github.com/Ernesto-tha-great/checked-luggage), and every snippet below is lifted from it.
+Nothing, until the response gets lost.
 
-## The airline already solved this
+You've probably had this happen with a banking app. You send money, the screen spins for a while, and then it tells you something went wrong. Did the money leave your account? You don't know. If you send it again, you might pay twice. If you don't, the person might never get paid.
 
-Airlines figured this problem out decades ago, with luggage.
+Your app is in exactly that position every time a request times out. A timeout tells you that *you* didn't get an answer. It doesn't tell you whether the server did the work.
 
-When you check a bag, you get a receipt before the bag goes anywhere. The bag gets a tag with a unique number. If it misses its flight, it goes on the next one. Bags travel together in the hold. At the other end, the tag means a bag can't be delivered to you twice. And if something can't be delivered at all, it ends up at the lost-luggage desk, not in a skip behind the terminal.
+![Without an idempotency key, a retry after a lost response creates a second order. With a key, the server recognises the retry and sends back the saved reply.](images/lost-response.svg)
 
-Swap "bag" for "request" and you have the whole design:
+The fix has a fancy name: idempotency. The HTTP specification, [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110#name-idempotent-methods), defines it like so:
 
-- **The receipt:** the request is written to disk *before* the UI says "Saved".
-- **The tag:** every request gets an idempotency key when it's created, and keeps it through every retry.
-- **The next flight:** failed sends are retried with backoff.
-- **The hold:** requests travel in batches.
-- **The tag check:** the server looks at the key *before* doing the work.
-- **The lost-luggage desk:** requests the server refuses go to a dead-letter handler, where the user can see them.
+> A request method is considered "idempotent" if the intended effect on the server of multiple identical requests with that method is the same as the effect for a single such request.
 
-The analogy breaks in one place, and it's the place that matters. A retry doesn't *move* the bag. It **copies** it. If the first copy already arrived, the tag is the only thing that tells the server it's looking at a duplicate. Keep that in your head; it's the reason Step 2 exists.
+In other words, sending a request twice should do the same thing as sending it once. `GET` and `PUT` already behave like that. `POST`, which is what you use to create things, does not. So we'll make it behave that way ourselves: every request gets a unique key, and the server remembers which keys it has already handled. Stripe's API works like this, and there's an [IETF draft](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/) that aims to standardise the `Idempotency-Key` header we'll be using.
 
-## Eight ways a write goes wrong
+### Sounds good, but why do we need a queue?
 
-Before writing any code, I find it helps to name the failures. These are the eight I designed the queue around. Pay attention to the second column, which shows what NetInfo, React Native's go-to connectivity library, reports while each one is happening.
+Because a key only fixes the duplicates. If the app is killed while it's still retrying, or the connection is down for longer than a few quick retries, the request is simply gone. To fix that, a request has to be written to disk *before* you tell the user it's saved, and something has to keep trying to send it, patiently, until the server answers.
 
-| # | Failure | NetInfo says | What a naive client does |
-|---|---|---|---|
-| 1 | **Total loss** (tunnel, flight mode) | offline | Shows an error; the write is gone unless the user retypes it |
-| 2 | **Lost response** (the server did the work, the reply died) | online | Retries and creates a **duplicate** |
-| 3 | **Captive portal** (hotel or conference Wi-Fi) | online | Treats a `200 OK` login page as success, or burns its retries |
-| 4 | **Black hole** (one bar of signal, or a SIM out of data) | online | Waits for a timeout, again and again |
-| 5 | **Thundering herd** (a whole train reconnects at once) | online | Retries on the same schedule as every other phone |
-| 6 | **Partial batch** (three items succeed, two fail) | online | Retries all five, or none |
-| 7 | **Poison request** (the server will never accept it) | online | Retries forever |
-| 8 | **Suspend, then kill** (iOS freezes the app, then reclaims it) | – | Loses everything it was holding in memory |
+That something is our queue. That being said, let's get to building!
 
-Count the "online"s. NetInfo isn't lying to you. It's answering a different question ("does this phone have a network interface?") from the one you care about ("will my request reach my server?"). The fixes below map onto these rows, and I'll point back to them as we go.
+## Prerequisites
 
-## What we're building
+- Node.js 20 or newer
+- Some familiarity with TypeScript
+- curl and a bash-style terminal (on Windows, use Git Bash or WSL)
+- For the last section, an Expo app, if you want to see it running on a phone
 
-![Architecture of the checked-luggage queue: enqueue writes a tagged request to storage; a scheduler triggers flush, which probes the server, sends tagged batches and applies per-item verdicts; the server checks each tag before doing the work.](./images/architecture.svg)
+## What Are We Building?
 
-There are three pieces:
+We'll build:
 
-1. **`OfflineQueue`**, a small TypeScript class with no React Native dependencies. It handles persistence, scheduling, batching and the server's verdicts.
-2. **A server contract.** `POST /batch` takes tagged items and returns one verdict per item, and `GET /generate_204` replies `204 No Content` so the app can check it's really talking to your server. The repo includes a demo server that does both.
-3. **A scheduler** in the app that calls `flush()` when the app comes to the foreground, when NetInfo reports a change, and when the queue says something is due.
+- a small orders API that, on purpose, sometimes saves an order and then hangs up before replying
+- two scripts that show how plain `fetch` with retries duplicates and loses orders
+- an `OfflineQueue` class that saves every request to disk, sends it with an idempotency key, backs off between retries and checks that your server is actually reachable before sending
+- a chaos script that throws an outage and a few app restarts at all of it, and counts what survives
+- a React Native hook that runs the queue inside an Expo app
 
-To follow along you'll need Node 20 or newer. A phone with Expo Go is optional; you only need it for the last step.
+Here's what the project will look like when we're done:
+
+```text
+offline-queue/
+  server/
+    app.ts            # the orders API
+    main.ts           # starts it on port 8787
+  src/
+    queue.ts          # the OfflineQueue class
+    storage.ts        # saves the queue to a JSON file
+    backoff.ts        # how long to wait between retries
+    probe.ts          # checks that your server is reachable
+  scripts/
+    naive.ts          # fetch + retries
+    with-keys.ts      # fetch + retries + an idempotency key
+    place-orders.ts   # plays the part of the app
+    chaos.ts          # one bad afternoon, three approaches
+  package.json
+  tsconfig.json
+```
+
+## Step 1: Setting Up Our Project
+
+Let's start by creating a folder for the project and initialising it.
 
 ```bash
-git clone https://github.com/Ernesto-tha-great/checked-luggage.git
-cd checked-luggage
-npm install
-npm test        # 19 tests, a couple of them over real HTTP
+mkdir offline-queue
+cd offline-queue
+npm init -y
 ```
 
-## Step 1: Check in before you say "Saved"
+Next, we install TypeScript, the Node.js types and tsx, which lets us run TypeScript files directly without a build step.
 
-The most important line in the whole queue is an `await` you'll be tempted to skip:
+```bash
+npm install --save-dev typescript tsx @types/node
+```
 
-```ts
-// src/queue.ts
-async enqueue(request: NewRequest): Promise<QueuedRequest> {
-  await this.ready();
-  const now = this.now();
-  const item: QueuedRequest = {
-    ...request,
-    id: this.createId(),      // the luggage tag
-    createdAt: now,
-    attempts: 0,
-    serverRetries: 0,
-    nextAttemptAt: now,       // due straight away
-  };
-  this.items.push(item);
-  await this.persist();       // on disk before we resolve
-  return item;
+Open the folder in VS Code (or your favourite code editor). In package.json, set `"type"` to `"module"` (add it if it isn't there) and replace the `scripts` section with the one below. The `"type": "module"` line is important: it lets us use `import` and top-level `await` in our scripts.
+
+```json
+{
+  "name": "offline-queue",
+  "type": "module",
+  "scripts": {
+    "server": "tsx server/main.ts",
+    "naive": "tsx scripts/naive.ts",
+    "with-keys": "tsx scripts/with-keys.ts",
+    "orders": "tsx scripts/place-orders.ts",
+    "chaos": "tsx scripts/chaos.ts",
+    "typecheck": "tsc --noEmit"
+  }
 }
 ```
 
-`enqueue()` doesn't resolve until the request is on disk. That gives the UI a simple rule: when the promise resolves, it's safe to say "Saved", because that order will survive a tunnel, a crash or a force-quit. This is row 1 of the table, handled.
+Finally, create a tsconfig.json file in the root of the project and paste in the code below.
 
-Storage is deliberately boring. The whole queue lives under **one key** as one JSON string, so every save replaces it in one go:
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "moduleDetection": "force",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["server", "src", "scripts", "test"]
+}
+```
+
+We're using `"moduleResolution": "Bundler"` so our imports don't need `.js` extensions. That way, the same files will work in React Native later without any changes.
+
+## Step 2: Building a Server That Hangs Up on You
+
+To test a queue, we need a server that misbehaves the same way a bad connection does. Create a folder called server, and in it, a file called app.ts. Paste in the code below.
 
 ```ts
-// src/storage.ts
-export function createKeyValueStorage(kv: KeyValueStore, key = 'checked-luggage/v1'): QueueStorage {
+import { createServer, type IncomingMessage } from 'node:http';
+
+export interface Order {
+  id: number;
+  sku: string;
+  qty: number;
+}
+
+export interface ServerOptions {
+  /** Share of orders that get saved, and then the connection drops before the reply. */
+  dropRate?: number;
+  random?: () => number;
+}
+
+export function createOrdersServer(options: ServerOptions = {}) {
+  const dropRate = options.dropRate ?? 0;
+  const random = options.random ?? Math.random;
+
+  const orders: Order[] = [];
+  let down = false;
+
+  const server = createServer(async (req, res) => {
+    if (down) {
+      req.socket.destroy();
+      return;
+    }
+
+    if (req.method === 'GET' && req.url === '/generate_204') {
+      res.writeHead(204).end();
+      return;
+    }
+
+    if (req.method === 'GET' && req.url === '/orders') {
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(orders));
+      return;
+    }
+
+    if (req.method === 'POST' && req.url === '/orders') {
+      const body = JSON.parse(await readBody(req)) as Partial<Order>;
+      if (typeof body.sku !== 'string' || !Number.isInteger(body.qty) || body.qty! < 1) {
+        res.writeHead(422, { 'content-type': 'application/json' }).end('{"error":"sku and qty are required"}');
+        return;
+      }
+
+      const order: Order = { id: orders.length + 1, sku: body.sku, qty: body.qty! };
+      orders.push(order);
+
+      if (random() < dropRate) {
+        // The order is saved. The phone will never hear about it.
+        req.socket.destroy();
+        return;
+      }
+
+      res.writeHead(201, { 'content-type': 'application/json' }).end(JSON.stringify(order));
+      return;
+    }
+
+    res.writeHead(404).end();
+  });
+
+  return {
+    server,
+    orders,
+    /** Simulate an outage: every request gets its connection dropped. */
+    setDown(value: boolean) {
+      down = value;
+    },
+  };
+}
+
+function readBody(req: IncomingMessage): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.setEncoding('utf8');
+    req.on('data', (chunk: string) => (data += chunk));
+    req.on('end', () => resolve(data));
+    req.on('error', reject);
+  });
+}
+```
+
+The `createOrdersServer` function gives us a tiny orders API with three routes:
+
+- `GET /generate_204` replies with an empty 204. We'll use it in Step 8, so ignore it for now.
+- `GET /orders` lists every order the server has saved.
+- `POST /orders` saves an order, as long as it has a `sku` and a `qty`.
+
+The interesting part is `dropRate`. After saving an order, the server rolls a die, and if it loses, it destroys the connection instead of replying. The order is saved, but the phone never hears about it. That's the banking app moment from earlier, on demand.
+
+It also returns a `setDown` function, which makes the server drop every request without saving anything. We'll use that later to fake an outage.
+
+Next, create a main.ts file in the same folder to start the server:
+
+```ts
+import { createOrdersServer } from './app';
+
+const port = Number(process.env.PORT ?? 8787);
+const { server } = createOrdersServer({ dropRate: Number(process.env.DROP_RATE ?? 0.3) });
+
+server.listen(port, () => {
+  console.log(`Orders API on http://localhost:${port}`);
+});
+```
+
+Let's run it.
+
+```bash
+npm run server
+```
+
+You should see `Orders API on http://localhost:8787`. Leave that terminal running, open a second one, and send four orders with curl:
+
+```bash
+for i in 1 2 3 4; do
+  curl -sS -X POST localhost:8787/orders -H 'content-type: application/json' -d "{\"sku\":\"SKU-$i\",\"qty\":1}"
+  echo
+done
+```
+
+Here's what I got. Yours will be a little different, because the hang-ups are random.
+
+```text
+curl: (52) Empty reply from server
+{"id":2,"sku":"SKU-2","qty":1}
+{"id":3,"sku":"SKU-3","qty":1}
+curl: (52) Empty reply from server
+```
+
+curl says it got nothing back for SKU-1 and SKU-4. Now ask the server what it actually saved:
+
+```bash
+curl localhost:8787/orders
+```
+
+```json
+[{"id":1,"sku":"SKU-1","qty":1},{"id":2,"sku":"SKU-2","qty":1},{"id":3,"sku":"SKU-3","qty":1},{"id":4,"sku":"SKU-4","qty":1}]
+```
+
+All four are there. The two "failed" orders weren't failures at all.
+
+## Step 3: Sending Orders the Usual Way
+
+Now let's see what the usual approach does with a server like this. Create a folder called scripts, and in it, a file called naive.ts.
+
+```ts
+// Send 20 orders the way most apps do: fetch, and retry if it fails.
+const API = process.env.API ?? 'http://localhost:8787';
+
+async function placeOrder(sku: string, qty: number) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await fetch(`${API}/orders`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ sku, qty }),
+      });
+      if (res.ok) return;
+    } catch {
+      // network error: try again
+    }
+  }
+  console.log(`Gave up on ${sku}`);
+}
+
+for (let i = 1; i <= 20; i++) {
+  await placeOrder(`SKU-${i}`, 1);
+}
+
+try {
+  const orders = (await (await fetch(`${API}/orders`)).json()) as Array<{ sku: string }>;
+  const unique = new Set(orders.map((order) => order.sku)).size;
+  console.log(`Tapped "Save" 20 times. The server has ${orders.length} orders for ${unique} different items.`);
+} catch {
+  console.log("Couldn't reach the server to count the orders.");
+}
+```
+
+This is what most apps do: send the request, and if it fails, try again, up to three times. The script places 20 orders, then asks the server how many it ended up with. Restart the server first (Ctrl+C, then `npm run server` again) so it starts with an empty list, then run:
+
+```bash
+npm run naive
+```
+
+```text
+Tapped "Save" 20 times. The server has 27 orders for 20 different items.
+```
+
+Seven of those are duplicates. Every time the server hung up after saving, the script assumed the order had failed and sent it again. Your numbers will be different, because the hang-ups are random. You might even see a "Gave up on SKU-7" line or two: that's an order that was saved three times, while the script thinks it was never saved at all.
+
+Now stop the server and run the script one more time:
+
+```text
+Gave up on SKU-1
+Gave up on SKU-2
+...
+Gave up on SKU-20
+Couldn't reach the server to count the orders.
+```
+
+Three quick retries are over in milliseconds. If the connection is gone for longer than that, every single order is lost. So the usual approach gives us both of our bugs: duplicates when replies get lost, and lost orders when the network goes away.
+
+## Step 4: Adding Idempotency Keys
+
+Let's fix the duplicates first. This is a change on the server: it needs to remember every key it has seen, together with the reply it sent.
+
+In server/app.ts, add a `replies` map right below the `orders` array:
+
+```ts
+  const orders: Order[] = [];
+  const replies = new Map<string, string>();
+```
+
+Then update the `POST /orders` handler so it checks the key before doing anything, and saves the reply under that key after creating the order. Your handler should now look like this:
+
+```ts
+    if (req.method === 'POST' && req.url === '/orders') {
+      const key = req.headers['idempotency-key'];
+      if (typeof key === 'string' && replies.has(key)) {
+        // We've seen this key before. Send the same answer, don't make a new order.
+        res.writeHead(201, { 'content-type': 'application/json' }).end(replies.get(key));
+        return;
+      }
+
+      const body = JSON.parse(await readBody(req)) as Partial<Order>;
+      if (typeof body.sku !== 'string' || !Number.isInteger(body.qty) || body.qty! < 1) {
+        res.writeHead(422, { 'content-type': 'application/json' }).end('{"error":"sku and qty are required"}');
+        return;
+      }
+
+      const order: Order = { id: orders.length + 1, sku: body.sku, qty: body.qty! };
+      orders.push(order);
+      const reply = JSON.stringify(order);
+      if (typeof key === 'string') replies.set(key, reply);
+
+      if (random() < dropRate) {
+        // The order is saved. The phone will never hear about it.
+        req.socket.destroy();
+        return;
+      }
+
+      res.writeHead(201, { 'content-type': 'application/json' }).end(reply);
+      return;
+    }
+```
+
+Two things to note here:
+
+- The key check happens *before* the order is created. If the server saw the key, it sends back the exact reply it sent the first time and stops there.
+- The reply is saved *before* the dice roll. So when the connection drops, the retry still finds the saved reply.
+
+In a real backend, `replies` would be a table with a unique constraint on the key, written in the same transaction as the order. Our `Map` plays that role here.
+
+Next, create scripts/with-keys.ts. It's the same as naive.ts, with one difference: each order gets a key, and the key is reused on every retry.
+
+```ts
+// The same 20 orders, but every order gets its own idempotency key.
+const API = process.env.API ?? 'http://localhost:8787';
+
+async function placeOrder(sku: string, qty: number) {
+  const key = crypto.randomUUID(); // one key per order, reused on every retry
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await fetch(`${API}/orders`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'idempotency-key': key },
+        body: JSON.stringify({ sku, qty }),
+      });
+      if (res.ok) return;
+    } catch {
+      // network error: try again
+    }
+  }
+  console.log(`Gave up on ${sku}`);
+}
+
+for (let i = 1; i <= 20; i++) {
+  await placeOrder(`SKU-${i}`, 1);
+}
+
+try {
+  const orders = (await (await fetch(`${API}/orders`)).json()) as Array<{ sku: string }>;
+  const unique = new Set(orders.map((order) => order.sku)).size;
+  console.log(`Tapped "Save" 20 times. The server has ${orders.length} orders for ${unique} different items.`);
+} catch {
+  console.log("Couldn't reach the server to count the orders.");
+}
+```
+
+Restart the server and run it:
+
+```bash
+npm run with-keys
+```
+
+```text
+Tapped "Save" 20 times. The server has 20 orders for 20 different items.
+```
+
+No more duplicates. But stop the server and run it again, and you'll get the same wall of "Gave up on…" as before. The key fixed the duplicates. It did nothing for the orders we lost. For that, we need the queue.
+
+## Step 5: Saving Requests Before Sending Them
+
+The first rule of our queue is simple: a request goes to disk *before* we tell the user it's saved. If the app is killed a second later, the request is still there when it opens again.
+
+Create a folder called src, and in it, a file called queue.ts. Paste in the code below.
+
+```ts
+export interface QueuedRequest {
+  /** A unique ID for this request. Sent as the Idempotency-Key header on every attempt. */
+  id: string;
+  path: string;
+  body: unknown;
+  attempts: number;
+  /** Saved with the item, so a retry schedule survives the app being killed. */
+  nextAttemptAt: number;
+  lastError?: string;
+}
+
+/** Where the queue keeps its requests between launches. */
+export interface Storage {
+  load(): Promise<QueuedRequest[]>;
+  save(items: QueuedRequest[]): Promise<void>;
+}
+
+export interface QueueOptions {
+  baseUrl: string;
+  storage: Storage;
+  /** Makes the unique ID. On React Native, pass expo-crypto's randomUUID. */
+  createId?: () => string;
+}
+
+export class OfflineQueue {
+  private items: QueuedRequest[] = [];
+  private loading: Promise<void> | null = null;
+  private saving: Promise<void> = Promise.resolve();
+
+  constructor(private readonly options: QueueOptions) {}
+
+  /** Resolves once the request is on disk, so it's safe to tell the user "Saved". */
+  async enqueue(path: string, body: unknown): Promise<QueuedRequest> {
+    await this.load();
+    const item: QueuedRequest = {
+      id: this.options.createId?.() ?? crypto.randomUUID(),
+      path,
+      body,
+      attempts: 0,
+      nextAttemptAt: Date.now(),
+    };
+    this.items.push(item);
+    await this.save();
+    return item;
+  }
+
+  async pending(): Promise<number> {
+    await this.load();
+    return this.items.length;
+  }
+
+  /** Saves run one after another, so a double tap can't make two writes trip over each other. */
+  private save(): Promise<void> {
+    const items = this.items;
+    this.saving = this.saving.catch(() => {}).then(() => this.options.storage.save(items));
+    return this.saving;
+  }
+
+  private load(): Promise<void> {
+    this.loading ??= this.options.storage.load().then((saved) => {
+      this.items = [...saved, ...this.items];
+    });
+    return this.loading;
+  }
+}
+```
+
+Here's what's going on:
+
+- `QueuedRequest` is what we store for every request. The `id` doubles as the idempotency key, so a request keeps the same key for its whole life, across retries and app restarts.
+- `Storage` is anything that can load and save the list. On a phone, that'll be AsyncStorage. Here, it'll be a JSON file.
+- `enqueue` loads whatever is already saved, adds the new request, and saves the whole list. It only resolves once the save is done, which is what makes it safe to show "Saved" right after.
+- `load` reads the saved list once, the first time anything needs it. If you enqueue something before the load finishes, the new request is kept after the saved ones.
+- `save` lines the writes up, one after another. If the user double-taps "Save", two writes would otherwise run at the same time and trip over each other.
+
+Now for the storage. In the src folder, create a file called storage.ts.
+
+```ts
+import { readFile, rename, writeFile } from 'node:fs/promises';
+import type { QueuedRequest, Storage } from './queue';
+
+/** A JSON file on disk. On a phone, AsyncStorage or MMKV plays this part. */
+export function fileStorage(path: string): Storage {
   return {
     async load() {
-      const raw = await kv.getItem(key);
-      return raw ? (JSON.parse(raw) as QueuedRequest[]) : [];
+      try {
+        return JSON.parse(await readFile(path, 'utf8')) as QueuedRequest[];
+      } catch {
+        return [];
+      }
     },
     async save(items) {
-      await kv.setItem(key, JSON.stringify(items));
+      // Write to a temporary file, then rename it over the old one. A rename is
+      // atomic, so a crash mid-write can't leave half a file behind.
+      await writeFile(`${path}.tmp`, JSON.stringify(items));
+      await rename(`${path}.tmp`, path);
     },
   };
 }
 ```
 
-AsyncStorage already has `getItem` and `setItem`, so it plugs straight in. MMKV needs a two-line wrapper.
+The temporary file and rename might look like overkill, but they matter. If the app crashes halfway through writing the file, you'd otherwise be left with half a JSON file and an empty queue.
 
-There's one sneaky bug to guard against: two saves racing each other. If `enqueue()` and `flush()` both save, and the *older* snapshot happens to finish writing last, it overwrites the newer one and a request quietly vanishes. (Ask me how I know.) The fix is to chain the writes, so they always land in the order they were made:
+To see it work, we need something to play the part of the app. In the scripts folder, create place-orders.ts.
 
 ```ts
-// src/queue.ts
-private persist(): Promise<void> {
-  const snapshot = this.items.map((item) => ({ ...item }));
-  this.writeChain = this.writeChain.then(() => this.options.storage.save(snapshot));
-  return this.writeChain;
+// Plays the part of the app: saves some orders, then tries to send them.
+//   npx tsx scripts/place-orders.ts 5    # save 5 new orders
+//   npx tsx scripts/place-orders.ts 0    # save nothing, just send what's waiting
+import { readFile } from 'node:fs/promises';
+import { OfflineQueue, type QueuedRequest } from '../src/queue';
+import { fileStorage } from '../src/storage';
+
+const API = process.env.API ?? 'http://localhost:8787';
+
+const queue = new OfflineQueue({
+  baseUrl: API,
+  storage: fileStorage('queue.json'),
+});
+
+const count = Number(process.argv[2] ?? 5);
+for (let i = 1; i <= count; i++) {
+  await queue.enqueue('/orders', { sku: `SKU-${Date.now()}-${i}`, qty: 1 });
+}
+await showQueue();
+
+/** Prints what's in queue.json right now. */
+async function showQueue() {
+  const items = JSON.parse(await readFile('queue.json', 'utf8').catch(() => '[]')) as QueuedRequest[];
+  console.log(`${items.length} in the queue`);
+  if (items.length === 0) return;
+  console.table(
+    items.map((item) => ({
+      attempts: item.attempts,
+      'next try in': `${Math.max(0, (item.nextAttemptAt - Date.now()) / 1000).toFixed(1)} s`,
+      'last error': item.lastError ?? '',
+    })),
+  );
 }
 ```
 
-If your queue ever holds thousands of items, you've built a sync engine, and you should move it to SQLite with one row per item. For a queue of pending writes, a single key is fine.
+It saves however many orders you ask for, then prints what's in queue.json. Run it twice:
 
-## Step 2: Tag every bag
+```bash
+npm run orders -- 3
+npm run orders -- 2
+```
 
-This is the bug from that train screenshot, drawn out:
+```text
+3 in the queue
+┌─────────┬──────────┬─────────────┬────────────┐
+│ (index) │ attempts │ next try in │ last error │
+├─────────┼──────────┼─────────────┼────────────┤
+│ 0       │ 0        │ '0.0 s'     │ ''         │
+│ 1       │ 0        │ '0.0 s'     │ ''         │
+│ 2       │ 0        │ '0.0 s'     │ ''         │
+└─────────┴──────────┴─────────────┴────────────┘
+5 in the queue
+┌─────────┬──────────┬─────────────┬────────────┐
+│ (index) │ attempts │ next try in │ last error │
+├─────────┼──────────┼─────────────┼────────────┤
+│ 0       │ 0        │ '0.0 s'     │ ''         │
+│ 1       │ 0        │ '0.0 s'     │ ''         │
+│ 2       │ 0        │ '0.0 s'     │ ''         │
+│ 3       │ 0        │ '0.0 s'     │ ''         │
+│ 4       │ 0        │ '0.0 s'     │ ''         │
+└─────────┴──────────┴─────────────┴────────────┘
+```
 
-![Sequence diagram. Without a tag, a lost response makes the phone retry and the server creates a second order. With a tag, the server recognises the retry and returns the stored verdict without creating a new order.](./images/lost-response.svg)
+Two separate runs of the script, which is basically two launches of the app, and the queue remembers all five. Nothing gets sent yet, though. Let's fix that.
 
-From the phone's side, a lost request and a lost response look exactly the same: a timeout. The phone can't tell them apart. Only the server can, and only if every request carries something that stays the same across retries. That's the idempotency key: a random ID generated **once, when the request is created**, and sent again on every retry.
+## Step 6: Sending What's in the Queue
 
-On the client, it's the `id` from Step 1. On the server, there's one rule:
-
-> Check the tag *before* doing the work, and save the tag *together with* the work.
+Back in src/queue.ts, we need a few more things. First, two new options in `QueueOptions`, a timeout and a callback for requests the server rejects:
 
 ```ts
-// server/core.ts
-if (this.options.honourIdempotencyKeys) {
-  const previous = this.processed.get(item.id);
-  if (previous) return previous; // a copy of a bag we already delivered
+export interface QueueOptions {
+  baseUrl: string;
+  storage: Storage;
+  /** Makes the unique ID. On React Native, pass expo-crypto's randomUUID. */
+  createId?: () => string;
+  timeoutMs?: number;
+  onDeadLetter?: (item: QueuedRequest, reason: string) => void;
 }
-
-// In production, insert the idempotency key and the order in ONE transaction,
-// with a unique constraint on the key. The Map plays that role here.
-this.executions.push({ key: item.id, actionId, at: this.now() });
-
-const result: ItemResult = { id: item.id, status: 'delivered' };
-if (this.options.honourIdempotencyKeys) this.processed.set(item.id, result);
-return result;
 ```
 
-The demo server uses a `Map` to keep things readable. In Postgres it looks like this:
-
-```sql
-CREATE TABLE idempotency_keys (
-  key        uuid PRIMARY KEY,
-  result     jsonb NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-BEGIN;
--- If two copies arrive together, the second insert waits for the first
--- transaction to finish, then inserts nothing.
-INSERT INTO idempotency_keys (key, result)
-VALUES ($1, '{"status":"delivered"}')
-ON CONFLICT (key) DO NOTHING;
-
--- 0 rows inserted? It's a copy: ROLLBACK and return the stored result.
--- Otherwise, do the real work in the same transaction.
-INSERT INTO orders (sku, qty) VALUES ($2, $3);
-COMMIT;
-```
-
-The key and the order living in the *same* transaction is the whole trick. If the order insert fails, the key is rolled back with it, so the retry gets a real second chance instead of a stored "success" for work that never happened. Brandur Leach's write-up on Stripe-style idempotency keys (linked at the end) goes much deeper on this, and it's worth your evening.
-
-You don't have to take my word for any of this. The test suite starts the demo server, makes it drop the *first* response on the floor, and checks what happens:
+Right below `QueueOptions`, add a type for the three ways a send can end:
 
 ```ts
-// test/http.test.ts
-it('creates a duplicate order when the server ignores the tag', async () => {
-  const { service } = await deliverOneOrderThroughALostResponse(false);
-  assert.equal(service.executions.length, 2, 'the same order was placed twice');
-});
-
-it('places the order exactly once when the server honours the tag', async () => {
-  const { service } = await deliverOneOrderThroughALostResponse(true);
-  assert.equal(service.executions.length, 1);
-});
+type Result = { outcome: 'delivered' } | { outcome: 'rejected' | 'retry'; reason: string };
 ```
 
-Two small notes. If you're sending one request at a time rather than batches, the IETF's draft `Idempotency-Key` header is the standard place to put the key. And React Native doesn't ship `crypto.randomUUID()`, so pass in your own ID generator; the example app uses `expo-crypto`.
-
-## Step 3: Don't trust NetInfo
-
-Rows 3 and 4 both happen with the network interface up, so NetInfo can't help you there. Instead, before sending a batch, the queue asks *your own server* something tiny:
+In the class, add a `flushing` field below `saving`:
 
 ```ts
-// src/probe.ts
-export function createReachabilityProbe(options: ProbeOptions): () => Promise<Reachability> {
-  const doFetch = options.fetch ?? globalThis.fetch;
-  const timeoutMs = options.timeoutMs ?? 5_000;
+  private flushing: Promise<void> | null = null;
+```
 
-  return async () => {
+Then add these methods to the class, right below `pending()`:
+
+```ts
+  /** Sends everything that's due. Two callers at once share one flush. */
+  flush(): Promise<void> {
+    this.flushing ??= this.sendDue().finally(() => {
+      this.flushing = null;
+    });
+    return this.flushing;
+  }
+
+  private async sendDue(): Promise<void> {
+    await this.load();
+    const due = this.items.filter((item) => item.nextAttemptAt <= Date.now());
+    if (due.length === 0) return;
+
+    for (const item of due) {
+      const result = await this.send(item);
+
+      if (result.outcome === 'delivered') {
+        this.remove(item);
+      } else if (result.outcome === 'rejected') {
+        // The server read it and said no. Retrying won't change its mind.
+        this.remove(item);
+        this.options.onDeadLetter?.(item, result.reason);
+      } else {
+        item.attempts++;
+        item.lastError = result.reason;
+        item.nextAttemptAt = Date.now();
+      }
+      await this.save();
+
+      // If the network just failed us, don't fire the rest of the queue into it.
+      if (result.outcome === 'retry') break;
+    }
+  }
+
+  private async send(item: QueuedRequest): Promise<Result> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.options.timeoutMs ?? 10_000);
+    try {
+      const res = await fetch(`${this.options.baseUrl}${item.path}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'idempotency-key': item.id },
+        body: JSON.stringify(item.body),
+        signal: controller.signal,
+      });
+      if (res.ok) return { outcome: 'delivered' };
+      if (res.status === 408 || res.status === 429 || res.status >= 500) {
+        return { outcome: 'retry', reason: `HTTP ${res.status}` };
+      }
+      return { outcome: 'rejected', reason: `HTTP ${res.status}: ${await res.text()}` };
+    } catch (err) {
+      return { outcome: 'retry', reason: err instanceof Error ? err.message : String(err) };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  private remove(item: QueuedRequest): void {
+    this.items = this.items.filter((other) => other.id !== item.id);
+  }
+```
+
+Let's walk through them:
+
+- `flush` is what the app calls whenever it thinks it's a good time to send: on launch, when the network comes back, after saving something new. If a flush is already running, a second caller just gets the same promise. Without that, two flushes could send the same request at the same time.
+- `sendDue` goes through every request that's due, in order. A 2xx means delivered, so it's removed. A 4xx means the server read the request and said no, so retrying won't help: it's removed and handed to `onDeadLetter`, so the app can tell the user. Anything else, like a network error, a timeout, a 408, a 429 or a 5xx, means "try again later".
+- After every request, it saves the list, so if the app dies halfway through a flush, nothing that wasn't delivered is forgotten. A request that was delivered just before the crash might get sent again, but that's exactly the case the key takes care of.
+- If a send fails because of the network, it stops. There's no point firing the next twenty requests into a connection that just failed.
+- `send` adds the `Idempotency-Key` header and gives up after `timeoutMs`. We're using an `AbortController` with a timer rather than `AbortSignal.timeout()`, because the second one isn't available in every React Native version.
+
+Finally, in scripts/place-orders.ts, add `await queue.flush();` right above `await showQueue();`.
+
+Make sure the server is stopped, delete queue.json (it still has the orders from Step 5), and save five orders:
+
+```bash
+npm run orders -- 5
+```
+
+```text
+5 in the queue
+┌─────────┬──────────┬─────────────┬────────────────┐
+│ (index) │ attempts │ next try in │ last error     │
+├─────────┼──────────┼─────────────┼────────────────┤
+│ 0       │ 1        │ '0.0 s'     │ 'fetch failed' │
+│ 1       │ 0        │ '0.0 s'     │ ''             │
+│ 2       │ 0        │ '0.0 s'     │ ''             │
+│ 3       │ 0        │ '0.0 s'     │ ''             │
+│ 4       │ 0        │ '0.0 s'     │ ''             │
+└─────────┴──────────┴─────────────┴────────────────┘
+```
+
+The first order failed, and the queue stopped there instead of trying the other four. Now start the server, and run `npm run orders -- 0` (save nothing, just send) until the queue is empty. For me, it took two runs:
+
+```text
+1 in the queue
+┌─────────┬──────────┬─────────────┬────────────────┐
+│ (index) │ attempts │ next try in │ last error     │
+├─────────┼──────────┼─────────────┼────────────────┤
+│ 0       │ 1        │ '0.0 s'     │ 'fetch failed' │
+└─────────┴──────────┴─────────────┴────────────────┘
+0 in the queue
+```
+
+On the first run, one of the replies got dropped, so the queue kept that order and tried it again on the second run. Now count what the server saved:
+
+```bash
+curl -s localhost:8787/orders
+```
+
+You should see exactly five orders. The one whose reply got dropped was sent twice, but thanks to the key, the server only made it once.
+
+Phew! The queue works. But there's a problem hiding in that `'0.0 s'` column.
+
+## Step 7: Backing Off Between Retries
+
+Right now, a failed request is due again immediately. On a phone, `flush` gets called a lot: every time the network flickers, every time the app comes to the foreground. With no wait between retries, a phone in a tunnel will hammer your server the moment it gets a signal. Now picture a few thousand phones coming out of the same tunnel.
+
+The usual fix is exponential backoff: wait 1 second, then 2, then 4, and so on, up to a cap. But if everyone backs off on the same schedule, they all come back at the same moment anyway. Marc Brooker's post [Exponential Backoff And Jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/) on the AWS Architecture Blog compares a few ways of adding randomness, and one of the two clear winners is "full jitter": wait a random time between zero and the exponential ceiling. It's also the simplest.
+
+In the src folder, create backoff.ts:
+
+```ts
+/**
+ * Exponential backoff with full jitter: wait a random time between zero and
+ * an exponentially growing ceiling. The randomness spreads retries out, so a
+ * thousand phones coming out of the same tunnel don't hit your API together.
+ */
+export function backoff(attempt: number, baseMs = 1_000, capMs = 60_000, random = Math.random): number {
+  const ceiling = Math.min(capMs, baseMs * 2 ** (attempt - 1));
+  return Math.floor(random() * ceiling);
+}
+```
+
+Back in queue.ts, import it at the top of the file:
+
+```ts
+import { backoff } from './backoff';
+```
+
+Add two options to `QueueOptions`, below `timeoutMs`:
+
+```ts
+  baseDelayMs?: number;
+  maxDelayMs?: number;
+```
+
+In `sendDue`, replace the line `item.nextAttemptAt = Date.now();` with:
+
+```ts
+        item.nextAttemptAt = Date.now() + backoff(item.attempts, this.baseDelay, this.maxDelay);
+```
+
+And at the bottom of the class, add two getters for the defaults: one second to start with, and never more than a minute.
+
+```ts
+  private get baseDelay() {
+    return this.options.baseDelayMs ?? 1_000;
+  }
+
+  private get maxDelay() {
+    return this.options.maxDelayMs ?? 60_000;
+  }
+```
+
+While we're here, let's add one more method, right above the comment for `flush()`. The app will use it later to know when to try again:
+
+```ts
+  /** When the next item is due, so the app knows when to try again. */
+  nextWakeAt(): number | null {
+    if (this.items.length === 0) return null;
+    return Math.min(...this.items.map((item) => item.nextAttemptAt));
+  }
+```
+
+Notice that `nextAttemptAt` is saved with the request. If the app is killed in the middle of a backoff, the schedule is still there when it opens again.
+
+Stop the server, delete queue.json, and save three orders, then flush twice more:
+
+```bash
+npm run orders -- 3
+npm run orders -- 0
+npm run orders -- 0
+```
+
+```text
+3 in the queue
+┌─────────┬──────────┬─────────────┬────────────────┐
+│ (index) │ attempts │ next try in │ last error     │
+├─────────┼──────────┼─────────────┼────────────────┤
+│ 0       │ 1        │ '0.4 s'     │ 'fetch failed' │
+│ 1       │ 0        │ '0.0 s'     │ ''             │
+│ 2       │ 0        │ '0.0 s'     │ ''             │
+└─────────┴──────────┴─────────────┴────────────────┘
+3 in the queue
+┌─────────┬──────────┬─────────────┬────────────────┐
+│ (index) │ attempts │ next try in │ last error     │
+├─────────┼──────────┼─────────────┼────────────────┤
+│ 0       │ 2        │ '0.7 s'     │ 'fetch failed' │
+│ 1       │ 0        │ '0.0 s'     │ ''             │
+│ 2       │ 0        │ '0.0 s'     │ ''             │
+└─────────┴──────────┴─────────────┴────────────────┘
+3 in the queue
+┌─────────┬──────────┬─────────────┬────────────────┐
+│ (index) │ attempts │ next try in │ last error     │
+├─────────┼──────────┼─────────────┼────────────────┤
+│ 0       │ 2        │ '0.0 s'     │ 'fetch failed' │
+│ 1       │ 1        │ '0.7 s'     │ 'fetch failed' │
+│ 2       │ 0        │ '0.0 s'     │ ''             │
+└─────────┴──────────┴─────────────┴────────────────┘
+```
+
+Each failure now buys some time before the next try, and the time grows. Your numbers will differ, because of the jitter. That's the jitter doing its job.
+
+Look at the "attempts" column, though. Every one of those failures was the network's fault, not the order's. If the connection is down for an hour, every order racks up attempts for nothing. As you could probably predict, that's the next thing we fix.
+
+## Step 8: Checking That Your Server Is Actually There
+
+Your phone can say it's connected when it isn't. Hotel and airport Wi-Fi often hand every request a login page with a 200 status. A phone over its data cap can keep a connection that goes nowhere. React Native's NetInfo does have an `isInternetReachable` flag, and by default it works it out by fetching a Google page. That tells you Google is reachable. It doesn't tell you your API is.
+
+Android has the same problem, and solves it by asking a server for an empty `204 No Content` response. If it gets anything else, someone is in the way. We'll do the same, against our own server. That's what the `/generate_204` route from Step 2 was for.
+
+In the src folder, create probe.ts:
+
+```ts
+/**
+ * Asks your own server for an empty 204. Anything else (a login page, a
+ * redirect, a timeout) means a request wouldn't get through right now.
+ */
+export function createProbe(url: string, timeoutMs = 5_000) {
+  return async (): Promise<boolean> => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const res = await doFetch(options.url, {
-        method: 'GET',
-        cache: 'no-store',
-        redirect: 'manual',
-        signal: controller.signal,
-      });
-      // Followed or not, a redirect or a 200 login page both mean "not our server".
-      return res.status === 204 ? 'online' : 'captive-portal';
+      const res = await fetch(url, { redirect: 'manual', signal: controller.signal });
+      return res.status === 204;
     } catch {
-      return 'offline';
+      return false;
     } finally {
       clearTimeout(timer);
     }
@@ -228,342 +883,605 @@ export function createReachabilityProbe(options: ProbeOptions): () => Promise<Re
 }
 ```
 
-I borrowed this trick from Android, which checks its own connectivity the same way. A `204 No Content` is hard to fake by accident. A captive portal either redirects you or serves its login page with a `200`, and both fail the check.
+Only an actual 204 counts as "online". In Node, `redirect: 'manual'` also stops `fetch` from following a captive portal's redirect to its login page. React Native's `fetch` follows redirects anyway, and that's fine: whatever page it lands on, it won't be a 204.
 
-The transport is just as suspicious. A response only counts if it's the JSON we asked for:
-
-```ts
-// src/http-transport.ts
-const contentType = res.headers.get('content-type') ?? '';
-if (!contentType.includes('application/json')) {
-  // A hotel Wi-Fi login page is a 200 OK too. Never trust a status code alone.
-  throw new TransportError('captive-portal', `expected JSON, got ${res.status} ${contentType}`);
-}
-```
-
-The decision I'm proudest of lives in `flush()`. **When the probe fails, no attempt is burned:**
+Now let's wire it into the queue. Add a `probe` option to `QueueOptions`, below `createId`:
 
 ```ts
-// src/queue.ts
-const heardRecently = this.now() - this.lastHeardFromServer < this.probeFreshnessMs;
-if (this.options.probe && !heardRecently) {
-  report.reachability = await this.options.probe();
-  if (report.reachability !== 'online') {
-    // The airport is closed. That isn't the luggage's fault, so no item
-    // attempt is burned. The queue backs off its *checks* instead.
-    this.probeFailures++;
-    const delay = fullJitterDelay(this.probeFailures, this.baseDelayMs, this.maxDelayMs, this.random);
-    this.notBefore = this.now() + Math.max(this.baseDelayMs, delay);
-    return report;
-  }
-  // ...reset the probe's backoff and carry on
-}
+  /** Asks your server if it's reachable before a flush. */
+  probe?: () => Promise<boolean>;
 ```
 
-Two details in there came straight out of testing:
-
-- **The probe costs a round trip.** On a slow network that's real time, so the queue skips it if the server has answered anything in the last 30 seconds (`probeFreshnessMs`). On the simulated conference Wi-Fi, that one change cut the median delivery time from 2.8 s to 1.4 s, the same as approaches that never probe at all.
-- **Time offline shouldn't count against a request.** If every failed send during a ten-minute tunnel made the request's backoff longer, it would still be waiting a full minute between tries *after* the train pulled into a station. Backing off the probe instead keeps the request's own schedule fresh. You'll see this pay off in the results.
-
-## Step 4: Back off like you mean it
-
-When a train comes out of a tunnel, every phone on it reconnects in the same second. If they all retry on the same schedule (1 s, 2 s, 4 s…), your API gets hit in neat, synchronised waves. That's row 5. The fix is **full jitter**: wait a random amount of time between zero and the exponential ceiling.
+Add a counter to the class, below `flushing`:
 
 ```ts
-// src/backoff.ts
-export function fullJitterDelay(attempt: number, baseMs: number, capMs: number, random = Math.random): number {
-  const ceiling = Math.min(capMs, baseMs * 2 ** Math.max(0, attempt - 1));
-  return Math.floor(random() * ceiling);
-}
+  private probeFailures = 0;
 ```
 
-Marc Brooker's post on the AWS Architecture Blog compares the different flavours of jitter. Full jitter spreads the load out about as well as any of them, and it's the simplest to write.
-
-If the server says how long to wait, with a `Retry-After` header, that wins over the random number:
+Then, in `sendDue`, add the probe check right below `if (due.length === 0) return;`, so that part looks like this:
 
 ```ts
-// src/queue.ts
-private scheduleRetry(item: QueuedRequest, reason: string, minDelayMs = 0): void {
-  item.attempts++;
-  const delay = fullJitterDelay(item.attempts, this.baseDelayMs, this.maxDelayMs, this.random);
-  item.nextAttemptAt = this.now() + Math.max(delay, minDelayMs);
-  item.lastError = reason;
-}
-```
+    if (due.length === 0) return;
 
-Notice that `nextAttemptAt` is a **timestamp saved on the item**, not a `setTimeout`. Hold that thought until Step 6.
-
-## Step 5: Batches that half succeed
-
-Sending one request per order is simple, but on a slow link each one pays a full round trip. So the queue sends batches of up to 20, and the server replies with **one verdict per item**:
-
-```json
-{
-  "results": [
-    { "id": "7f3a…", "status": "delivered" },
-    { "id": "91c0…", "status": "retry", "reason": "inventory service busy" },
-    { "id": "c44e…", "status": "rejected", "reason": "unknown sku" }
-  ]
-}
-```
-
-Each verdict sends a request down a different path:
-
-![State diagram. Queued goes to In flight when due and online. In flight goes to Delivered, to Waiting on a network failure or retry verdict, or to Dead letter when rejected or retried too often. Waiting returns to Queued when its backoff expires. A failed probe keeps the item Queued without burning an attempt.](./images/item-lifecycle.svg)
-
-In code:
-
-```ts
-// src/queue.ts
-const verdicts = new Map(results.map((result) => [result.id, result]));
-for (const item of batch) {
-  const verdict: ItemResult = verdicts.get(item.id) ?? {
-    id: item.id,
-    status: 'retry',
-    reason: 'missing from batch response',
-  };
-
-  if (verdict.status === 'delivered') {
-    this.remove(item);
-    report.delivered++;
-  } else if (verdict.status === 'rejected') {
-    this.deadLetter(item, verdict.reason);
-    report.deadLettered++;
-  } else {
-    item.serverRetries++;
-    if (item.serverRetries >= this.maxServerRetries) {
-      this.deadLetter(item, `server asked for ${item.serverRetries} retries: ${verdict.reason}`);
-      report.deadLettered++;
-    } else {
-      this.scheduleRetry(item, verdict.reason);
-      report.retrying++;
+    if (this.options.probe && !(await this.options.probe())) {
+      // The server isn't reachable. That's not any item's fault, so no item
+      // loses an attempt. We just wait longer before checking again.
+      this.probeFailures++;
+      const wait = Math.max(this.baseDelay, backoff(this.probeFailures, this.baseDelay, this.maxDelay));
+      for (const item of due) item.nextAttemptAt = Date.now() + wait;
+      await this.save();
+      return;
     }
-  }
-}
+    this.probeFailures = 0;
 ```
 
-There are three rules hiding in that block, covering rows 6 and 7:
+If the probe fails, no request loses an attempt. The queue just pushes every due request back, and waits longer each time the probe keeps failing.
 
-1. **A missing verdict means "retry", never "delivered".** If the server forgets to mention an item, assume it didn't happen. The tag makes sending it again safe.
-2. **Only the server can send a request to the lost-luggage desk.** Network failures back off forever. A clear "no" from the server, or too many "try again later"s, ends it. A request should never be thrown away because the *airport* was closed.
-3. **If a batch fails at the network level, stop.** If batch one just timed out, don't fire batches two to five into the same black hole:
+Finally, in scripts/place-orders.ts, import the probe and pass it to the queue:
 
 ```ts
-} catch (err) {
-  for (const item of batch) this.scheduleRetry(item, describe(err), retryAfterMs);
-  this.lastHeardFromServer = 0; // whatever we knew about the network is stale now
-  await this.persist();
-  break;
-}
+import { createProbe } from '../src/probe';
 ```
-
-Dead-lettered requests go to an `onDeadLetter` callback. Please show them to the user. A silently dropped order is worse than an error message, and it's a much worse support ticket.
-
-## Step 6: Survive being suspended and killed
-
-Row 8 is the one most hand-rolled retry loops miss. Lock the phone and iOS suspends your JavaScript; timers stop. If memory gets tight, the OS kills the app without asking. Whatever lived only in memory goes with it: your retry loop, your pending requests, all of it.
-
-The queue survives this because of two decisions we've already made. Every request is **on disk** (Step 1), and every request's schedule is a **saved timestamp** (Step 4), not a timer. That means a timer is only ever a nudge. If it fires late, or never fires at all, nothing is lost. The next time the app comes to the foreground, `flush()` sends whatever is due.
-
-Here's the hook that wires that up in the app:
 
 ```ts
-// example/src/useOfflineQueue.ts
-const flushAndReschedule = useCallback(async () => {
-  if (timer.current) clearTimeout(timer.current);
-  await queue.flush();
-  await refresh();
-
-  const wakeAt = queue.nextWakeAt();
-  if (wakeAt !== null) {
-    // A timer is only a nudge. If iOS suspends the app, it fires late or not at
-    // all. The persisted nextAttemptAt keeps the schedule honest either way.
-    timer.current = setTimeout(flushAndReschedule, Math.max(0, wakeAt - Date.now()));
-  }
-}, [refresh]);
-
-useEffect(() => {
-  void flushAndReschedule();
-
-  const appState = AppState.addEventListener('change', (state) => {
-    if (state === 'active') void flushAndReschedule();
-  });
-
-  // NetInfo is a hint that *something* changed, not proof that requests will work.
-  const unsubscribe = NetInfo.addEventListener((state) => {
-    if (state.isConnected) void flushAndReschedule();
-  });
-
-  return () => {
-    appState.remove();
-    unsubscribe();
-    if (timer.current) clearTimeout(timer.current);
-  };
-}, [flushAndReschedule]);
-```
-
-Three things can trigger a flush at the same moment: the app coming back, NetInfo, and the timer. So `flush()` is single-flight, meaning simultaneous callers share one flush instead of sending the same batch three times:
-
-```ts
-flush(): Promise<FlushReport> {
-  this.inFlight ??= this.doFlush().finally(() => {
-    this.inFlight = null;
-  });
-  return this.inFlight;
-}
-```
-
-What about syncing while the app is in the background? Both platforms will run scheduled background work for you (BGTaskScheduler on iOS, WorkManager on Android), and Expo wraps both. It's worth adding, but treat it as a bonus: the OS decides when, and whether, your task runs, and that's often no more than once every 15 minutes. The foreground path above has to be correct on its own.
-
-## Step 7: Wire it into the app
-
-With the queue and the hook in place, the screen itself is almost boring. That's the goal:
-
-```tsx
-// example/App.tsx
-const { pending, submit } = useOfflineQueue();
-
-const onSave = async () => {
-  await submit({ method: 'POST', path: '/orders', body: { sku, qty: Number(qty) } });
-  // Safe to say, because enqueue() only resolves once the order is on disk.
-  setMessage('Saved. It will sync when the network lets it.');
-};
-
-// ...
-<View style={[styles.badge, pending > 0 ? styles.badgeWaiting : styles.badgeClear]}>
-  <Text style={styles.badgeText}>
-    {pending === 0 ? 'Everything synced' : `${pending} waiting to send`}
-  </Text>
-</View>
-```
-
-Create the queue once, in its own module, and share that one instance across the app. Two queues writing to the same storage key would overwrite each other:
-
-```ts
-// example/src/queue.ts
-export const queue = new OfflineQueue({
-  storage: createKeyValueStorage(AsyncStorage),
-  transport: createHttpTransport({ baseUrl: API_URL }),
-  probe: createReachabilityProbe({ url: `${API_URL}/generate_204` }),
-  createId: () => Crypto.randomUUID(),
-  onDeadLetter: (item, reason) => {
-    console.warn(`Could not deliver ${item.path} (${item.id}): ${reason}`);
-  },
+const queue = new OfflineQueue({
+  baseUrl: API,
+  storage: fileStorage('queue.json'),
+  probe: createProbe(`${API}/generate_204`),
 });
 ```
 
-To try it on a real phone, start the demo server and point the Expo app at your laptop:
+Stop the server, delete queue.json, save three orders, then flush again:
 
 ```bash
-npm run server                                        # orders API on :8787
-EXPO_PUBLIC_API_URL=http://<your-laptop-ip>:8787 npx expo start
+npm run orders -- 3
+npm run orders -- 0
 ```
 
-Then be mean to it. Restart the server with `DROP_RESPONSE_RATE=0.5` and it will do the work and then hang up on half your requests. Every order still shows up exactly once at `GET /orders`. Add `IGNORE_KEYS=1` and watch the duplicates roll in. On iOS, the Network Link Conditioner in developer settings with 100% loss gives you a decent dead zone: NetInfo keeps saying "connected", the probe disagrees, and the badge counts your orders piling up. The example's README has the full walkthrough.
-
-## Putting it through bad networks
-
-Unit tests prove each rule on its own. They can't tell you how the rules behave *together* over twenty minutes of awful connectivity. I don't have a lab full of phones riding trains, so I did the next best thing: I wrote a small simulator that replays a bad network against the queue, and against three simpler approaches, on a fake clock.
-
-### Describing a bad network
-
-A scenario is a timeline of what the network is doing, plus what the app is doing:
-
-```json
-{
-  "name": "underground-commute",
-  "segments": [
-    { "seconds": 90,  "state": "up", "latencyMs": 120 },
-    { "seconds": 150, "state": "down" },
-    { "seconds": 20,  "state": "up", "latencyMs": 900, "lossRate": 0.4 },
-    { "seconds": 60,  "state": "blackhole" }
-  ],
-  "events": [
-    { "at": 640, "type": "suspend" },
-    { "at": 700, "type": "kill" },
-    { "at": 760, "type": "resume" }
-  ]
-}
+```text
+3 in the queue
+┌─────────┬──────────┬─────────────┬────────────┐
+│ (index) │ attempts │ next try in │ last error │
+├─────────┼──────────┼─────────────┼────────────┤
+│ 0       │ 0        │ '1.0 s'     │ ''         │
+│ 1       │ 0        │ '1.0 s'     │ ''         │
+│ 2       │ 0        │ '1.0 s'     │ ''         │
+└─────────┴──────────┴─────────────┴────────────┘
+3 in the queue
+┌─────────┬──────────┬─────────────┬────────────┐
+│ (index) │ attempts │ next try in │ last error │
+├─────────┼──────────┼─────────────┼────────────┤
+│ 0       │ 0        │ '0.5 s'     │ ''         │
+│ 1       │ 0        │ '0.5 s'     │ ''         │
+│ 2       │ 0        │ '0.5 s'     │ ''         │
+└─────────┴──────────┴─────────────┴────────────┘
 ```
 
-Four states cover the whole failure table:
+Zero attempts, and no errors on the orders themselves. The second run didn't even try, because nothing was due yet. Start the server again, wait a second, and run `npm run orders -- 0`. You'll get `0 in the queue` (if a reply gets dropped on the way back, there'll be one left; run it once more), and the server will have exactly three orders.
 
-- **`up`**: packets flow, with whatever latency and loss you give it (rows 2, 5 and 6)
-- **`down`**: no network at all; requests fail instantly (row 1)
-- **`blackhole`**: looks connected, nothing comes back; requests time out (row 4)
-- **`captive`**: every request gets an HTML login page with a `200` (row 3)
-
-The detail that makes the simulator worth anything is how it loses packets on an `up` link. Half of the losses drop the *request*, so the server never sees it. The other half drop the *response*, after the server has already done the work:
+Your project should look exactly like mine if you've followed the above steps. Here's the complete src/queue.ts, in case anything went missing along the way:
 
 ```ts
-// sim/network.ts
-const roll = this.random();
-if (roll < loss / 2) {
-  // Lost on the way out: the server never sees it.
-  this.clock.advance(this.requestTimeoutMs);
-  return { ok: false, kind: 'timeout' };
+import { backoff } from './backoff';
+
+export interface QueuedRequest {
+  /** A unique ID for this request. Sent as the Idempotency-Key header on every attempt. */
+  id: string;
+  path: string;
+  body: unknown;
+  attempts: number;
+  /** Saved with the item, so a retry schedule survives the app being killed. */
+  nextAttemptAt: number;
+  lastError?: string;
 }
-this.clock.advance(latency);
-const value = serve();
-if (roll < loss) {
-  // Lost on the way back: the work is done, the phone doesn't know.
-  this.clock.advance(this.requestTimeoutMs - latency);
-  return { ok: false, kind: 'timeout' };
+
+/** Where the queue keeps its requests between launches. */
+export interface Storage {
+  load(): Promise<QueuedRequest[]>;
+  save(items: QueuedRequest[]): Promise<void>;
+}
+
+export interface QueueOptions {
+  baseUrl: string;
+  storage: Storage;
+  /** Makes the unique ID. On React Native, pass expo-crypto's randomUUID. */
+  createId?: () => string;
+  /** Asks your server if it's reachable before a flush. */
+  probe?: () => Promise<boolean>;
+  timeoutMs?: number;
+  baseDelayMs?: number;
+  maxDelayMs?: number;
+  onDeadLetter?: (item: QueuedRequest, reason: string) => void;
+}
+
+type Result = { outcome: 'delivered' } | { outcome: 'rejected' | 'retry'; reason: string };
+
+export class OfflineQueue {
+  private items: QueuedRequest[] = [];
+  private loading: Promise<void> | null = null;
+  private saving: Promise<void> = Promise.resolve();
+  private flushing: Promise<void> | null = null;
+  private probeFailures = 0;
+
+  constructor(private readonly options: QueueOptions) {}
+
+  /** Resolves once the request is on disk, so it's safe to tell the user "Saved". */
+  async enqueue(path: string, body: unknown): Promise<QueuedRequest> {
+    await this.load();
+    const item: QueuedRequest = {
+      id: this.options.createId?.() ?? crypto.randomUUID(),
+      path,
+      body,
+      attempts: 0,
+      nextAttemptAt: Date.now(),
+    };
+    this.items.push(item);
+    await this.save();
+    return item;
+  }
+
+  async pending(): Promise<number> {
+    await this.load();
+    return this.items.length;
+  }
+
+  /** When the next item is due, so the app knows when to try again. */
+  nextWakeAt(): number | null {
+    if (this.items.length === 0) return null;
+    return Math.min(...this.items.map((item) => item.nextAttemptAt));
+  }
+
+  /** Sends everything that's due. Two callers at once share one flush. */
+  flush(): Promise<void> {
+    this.flushing ??= this.sendDue().finally(() => {
+      this.flushing = null;
+    });
+    return this.flushing;
+  }
+
+  private async sendDue(): Promise<void> {
+    await this.load();
+    const due = this.items.filter((item) => item.nextAttemptAt <= Date.now());
+    if (due.length === 0) return;
+
+    if (this.options.probe && !(await this.options.probe())) {
+      // The server isn't reachable. That's not any item's fault, so no item
+      // loses an attempt. We just wait longer before checking again.
+      this.probeFailures++;
+      const wait = Math.max(this.baseDelay, backoff(this.probeFailures, this.baseDelay, this.maxDelay));
+      for (const item of due) item.nextAttemptAt = Date.now() + wait;
+      await this.save();
+      return;
+    }
+    this.probeFailures = 0;
+
+    for (const item of due) {
+      const result = await this.send(item);
+
+      if (result.outcome === 'delivered') {
+        this.remove(item);
+      } else if (result.outcome === 'rejected') {
+        // The server read it and said no. Retrying won't change its mind.
+        this.remove(item);
+        this.options.onDeadLetter?.(item, result.reason);
+      } else {
+        item.attempts++;
+        item.lastError = result.reason;
+        item.nextAttemptAt = Date.now() + backoff(item.attempts, this.baseDelay, this.maxDelay);
+      }
+      await this.save();
+
+      // If the network just failed us, don't fire the rest of the queue into it.
+      if (result.outcome === 'retry') break;
+    }
+  }
+
+  private async send(item: QueuedRequest): Promise<Result> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.options.timeoutMs ?? 10_000);
+    try {
+      const res = await fetch(`${this.options.baseUrl}${item.path}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'idempotency-key': item.id },
+        body: JSON.stringify(item.body),
+        signal: controller.signal,
+      });
+      if (res.ok) return { outcome: 'delivered' };
+      if (res.status === 408 || res.status === 429 || res.status >= 500) {
+        return { outcome: 'retry', reason: `HTTP ${res.status}` };
+      }
+      return { outcome: 'rejected', reason: `HTTP ${res.status}: ${await res.text()}` };
+    } catch (err) {
+      return { outcome: 'retry', reason: err instanceof Error ? err.message : String(err) };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  private remove(item: QueuedRequest): void {
+    this.items = this.items.filter((other) => other.id !== item.id);
+  }
+
+  /** Saves run one after another, so a double tap can't make two writes trip over each other. */
+  private save(): Promise<void> {
+    const items = this.items;
+    this.saving = this.saving.catch(() => {}).then(() => this.options.storage.save(items));
+    return this.saving;
+  }
+
+  private load(): Promise<void> {
+    this.loading ??= this.options.storage.load().then((saved) => {
+      this.items = [...saved, ...this.items];
+    });
+    return this.loading;
+  }
+
+  private get baseDelay() {
+    return this.options.baseDelayMs ?? 1_000;
+  }
+
+  private get maxDelay() {
+    return this.options.maxDelayMs ?? 60_000;
+  }
 }
 ```
 
-Time is simulated and every random number comes from a seed, so all 400 runs finish in under a second and give you the same numbers every time.
+## Testing Our Queue
 
-### Four scenarios, four approaches
+Stopping and starting a server by hand only tells us so much. So let's give the queue a properly bad afternoon, and see how it compares with the two scripts from Steps 3 and 4.
 
-The repo ships with four scenarios. Each one is modelled on a situation everyone has been in, and each leans on a different row of the table:
+Create scripts/chaos.ts and paste in the code below.
 
-- **Underground commute (20 minutes):** signal at stations, nothing in the tunnels, weak signal at the platform edges, and one stretch of full bars with no data. The phone goes into a pocket twice, and the second time the OS kills the app.
-- **Office lift (6 minutes):** a 45-second ride in a metal box, then a weak signal as the doors open.
-- **Conference Wi-Fi (15 minutes):** a captive portal for the first four minutes, then a congested network losing 15% of packets.
-- **Out of data (15 minutes):** the SIM hits its cap and nothing gets through for nine minutes, while NetInfo cheerfully reports a connection.
+```ts
+// One bad afternoon, three ways of sending orders through it.
+//
+// 100 orders, one every 40 ms. The server hangs up on 25% of them after saving,
+// goes down completely for 2 seconds in the middle, and the "app" is killed
+// every 25 orders. Then we count what the server ended up with.
+import { rm } from 'node:fs/promises';
+import type { AddressInfo } from 'node:net';
+import { createOrdersServer } from '../server/app';
+import { createProbe } from '../src/probe';
+import { OfflineQueue } from '../src/queue';
+import { fileStorage } from '../src/storage';
 
-And four ways of sending the same user's orders:
+const ORDERS = 100;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-- **Fire and forget:** `fetch()` on tap; if it fails, show an error.
-- **Retry in memory:** the classic hand-rolled loop, with exponential backoff and no keys.
-- **Durable, no tags:** this article's queue, saved to disk and jittered, but without idempotency keys or the probe.
-- **Checked luggage:** the whole thing.
+/** A seeded random, so every run drops the same requests. */
+function seeded(seed: number) {
+  return () => {
+    seed = (seed * 1664525 + 1013904223) % 2 ** 32;
+    return seed / 2 ** 32;
+  };
+}
 
-Run it yourself:
+interface Approach {
+  name: string;
+  /** The user taps "Save". */
+  tap(sku: string): void;
+  /** The OS kills the app. Anything only in memory is gone. */
+  kill(): void;
+  /** The app is opened again later and gets a chance to finish. */
+  finish(): Promise<void>;
+}
+
+async function run(makeApproach: (api: string) => Approach) {
+  const { server, orders, setDown } = createOrdersServer({ dropRate: 0.25, random: seeded(42) });
+  await new Promise<void>((resolve) => server.listen(0, resolve));
+  const api = `http://localhost:${(server.address() as AddressInfo).port}`;
+  const approach = makeApproach(api);
+
+  for (let i = 1; i <= ORDERS; i++) {
+    if (i === 40) setDown(true); // the outage starts...
+    if (i === 90) setDown(false); // ...and ends 2 seconds later
+    approach.tap(`SKU-${i}`);
+    await sleep(40);
+    if (i % 25 === 0) approach.kill(); // a moment after "Saved", the OS kills the app
+  }
+  await approach.finish();
+
+  server.closeAllConnections();
+  server.close();
+
+  const counts = new Map<string, number>();
+  for (const order of orders) counts.set(order.sku, (counts.get(order.sku) ?? 0) + 1);
+  const lost = ORDERS - counts.size;
+  const duplicated = [...counts.values()].filter((n) => n > 1).length;
+  return { name: approach.name, lost, duplicated, exactlyOnce: ORDERS - lost - duplicated };
+}
+
+// 1. What most apps do: fetch, retry three times, give up.
+const naive = (api: string): Approach => {
+  let generation = 0;
+  return {
+    name: 'fetch + 3 retries',
+    tap(sku) {
+      const born = generation;
+      void (async () => {
+        for (let attempt = 0; attempt < 3 && born === generation; attempt++) {
+          try {
+            const res = await fetch(`${api}/orders`, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ sku, qty: 1 }),
+            });
+            if (res.ok) return;
+          } catch {}
+        }
+      })();
+    },
+    kill() {
+      generation++; // every retry loop that's still running dies with the app
+    },
+    async finish() {
+      await sleep(1_000);
+    },
+  };
+};
+
+// 2. Same retries, plus an idempotency key. Still only in memory.
+const tagged = (api: string): Approach => {
+  let generation = 0;
+  return {
+    name: 'retries + idempotency key',
+    tap(sku) {
+      const born = generation;
+      const key = crypto.randomUUID();
+      void (async () => {
+        for (let attempt = 0; attempt < 3 && born === generation; attempt++) {
+          try {
+            const res = await fetch(`${api}/orders`, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'idempotency-key': key },
+              body: JSON.stringify({ sku, qty: 1 }),
+            });
+            if (res.ok) return;
+          } catch {}
+        }
+      })();
+    },
+    kill() {
+      generation++;
+    },
+    async finish() {
+      await sleep(1_000);
+    },
+  };
+};
+
+// 3. The queue: tagged, on disk, backed off, probed.
+const queued = (api: string): Approach => {
+  const disk = fileStorage('chaos-queue.json');
+  let generation = 0;
+  const make = () => {
+    const born = ++generation;
+    const alive = () => born === generation;
+    const probe = createProbe(`${api}/generate_204`, 500);
+    return new OfflineQueue({
+      baseUrl: api,
+      // A killed app can't write to disk any more, and its next flush goes nowhere.
+      storage: { load: () => disk.load(), save: async (items) => (alive() ? disk.save(items) : undefined) },
+      probe: async () => alive() && (await probe()),
+      timeoutMs: 1_000,
+      baseDelayMs: 100,
+      maxDelayMs: 2_000,
+    });
+  };
+  let queue = make();
+  return {
+    name: 'the queue',
+    tap(sku) {
+      void queue.enqueue('/orders', { sku, qty: 1 }).then(() => queue.flush());
+    },
+    kill() {
+      queue = make(); // a fresh launch: it only knows what's on disk
+    },
+    async finish() {
+      const deadline = Date.now() + 15_000;
+      while ((await queue.pending()) > 0 && Date.now() < deadline) {
+        await queue.flush();
+        await sleep(100);
+      }
+    },
+  };
+};
+
+await rm('chaos-queue.json', { force: true });
+const results = [await run(naive), await run(tagged), await run(queued)];
+await rm('chaos-queue.json', { force: true });
+
+console.table(results);
+```
+
+Here's what the script does:
+
+- It starts its own copy of the server on a random port, with a 25% chance of hanging up after saving each order. The random numbers are seeded, so every run drops the same requests.
+- It places 100 orders, one every 40 milliseconds. Between orders 40 and 90, the server goes down completely, which works out to about two seconds.
+- Every 25 orders, a moment after the user saw "Saved", the "app" is killed. For the first two approaches, any retry still running in memory dies with it. For the queue, a new `OfflineQueue` takes over, and it only knows what's on disk. The old one can't write to disk any more, and its next flush goes nowhere, just like a dead app.
+- At the end, the queue gets a chance to finish sending, like an app being opened again later. Then we count what the server ended up with.
+
+Run it. It takes about 16 seconds.
 
 ```bash
-npm run bench     # replays every scenario against every approach, 25 seeds each
-npm run chart     # redraws the chart below from the results
+npm run chaos
 ```
 
-To try your own scenarios, drop JSON files in a folder and run `npm run bench -- ./my-scenarios`.
+```text
+┌─────────┬─────────────────────────────┬──────┬────────────┬─────────────┐
+│ (index) │ name                        │ lost │ duplicated │ exactlyOnce │
+├─────────┼─────────────────────────────┼──────┼────────────┼─────────────┤
+│ 0       │ 'fetch + 3 retries'         │ 50   │ 15         │ 35          │
+│ 1       │ 'retries + idempotency key' │ 50   │ 0          │ 50          │
+│ 2       │ 'the queue'                 │ 0    │ 0          │ 100         │
+└─────────┴─────────────────────────────┴──────┴────────────┴─────────────┘
+```
 
-## What happened
+Fetch with retries lost half of the orders and saved 15 of them more than once. Adding a key fixed every duplicate, but it lost the same 50 orders: the ones placed during the outage. Three instant retries are over long before the server comes back, and once they're done, nothing remembers the order. The queue wrote every order to disk before saying "Saved", waited out the outage, survived four restarts, and delivered all 100, exactly once.
 
-![Small multiples, one per scenario, each with a 100% stacked bar per approach showing the share of orders delivered exactly once, duplicated or lost. Checked luggage delivers 100% exactly once in all four scenarios.](./images/results.svg)
+The finished project also has unit tests for each of these behaviours. If you clone it, `npm test` runs them.
 
-| Scenario | Fire and forget | Retry in memory | Durable, no tags | Checked luggage |
-|---|---|---|---|---|
-| Underground commute | 64.5% lost | 23.7% lost, 2.5% duplicated | 5.6% duplicated | **100% exactly once** |
-| Conference Wi-Fi | 33.0% lost | 8.3% duplicated | 7.6% duplicated | **100% exactly once** |
-| Office lift | 14.3% lost | 2.1% duplicated | 3.0% duplicated | **100% exactly once** |
-| Out of data | 52.7% lost | 100% exactly once | 100% exactly once | **100% exactly once** |
+## Using the Queue in React Native
 
-A few things jumped out at me.
+Finally, let's put the queue in an app. If you don't have an Expo app yet, create one with the blank TypeScript template:
 
-**Retrying in memory swaps one bug for another.** On the commute, it cut losses from 64.5% to 23.7%. Nearly all of what's left is the moment the OS killed the app: everything held in memory died with the process. That's my second bug report, recreated on demand.
+```bash
+npx create-expo-app@latest offline-orders --template blank-typescript
+cd offline-orders
+```
 
-**Saving to disk without tags just moves the bug.** The durable queue without keys didn't lose a single order in any scenario, but it duplicated 3–8% of them wherever the network dropped responses. That's my *first* bug report. Seeing both of them reproduced in a simulator was oddly satisfying.
+Then install the three packages we need:
 
-**Being offline doesn't cause duplicates; being *half* online does.** Look at the "out of data" row. A black hole never delivers anything, so it never loses a response, so there's nothing to duplicate, and every approach that retries scores 100%. Duplicates come from the network that *mostly* works.
+```bash
+npx expo install @react-native-async-storage/async-storage @react-native-community/netinfo expo-crypto
+```
 
-**The probe pays for itself on long outages, and costs a little on short ones.** On the commute, the full queue's median delivery time was 52.2 seconds, against 70.2 for the durable queue without a probe. Without the probe, every failed send during the tunnels pushed the request's backoff higher, so requests were still waiting long after the train reached a station. The out-of-data scenario shows the other side: there, the extra round trip made the full queue a little slower, 29.9 seconds against 25.7.
+Create a lib folder and copy three files from our project into it: src/queue.ts, src/backoff.ts and src/probe.ts. You don't need storage.ts, because on a phone, AsyncStorage takes its place.
 
-One honest note on all of this: these are simulated networks, built to model situations we all recognise, not recordings from real phones. The simulator also simplifies a couple of things (requests in a batch go one after another, and a network change halfway through a request is ignored). So read the numbers as a fair fight between four approaches under identical conditions, not as a forecast for your users. If you can record your own users' networks, the harness will take them as they are, and I'd love to see the results.
+In the lib folder, create offline.ts:
 
-## Wrapping up
+```ts
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { randomUUID } from 'expo-crypto';
+import { createProbe } from './probe';
+import { OfflineQueue, type QueuedRequest, type Storage } from './queue';
 
-If I could go back and tell weekend-me one thing, it would be this: every write from a phone needs four guarantees. It's on disk before the user is told it's saved. It carries a tag the server checks. The app finds out whether your server is really there before spending a retry. And its schedule is saved on disk rather than held in a timer. Get those four right and both of my bug reports go away.
+const API = 'https://your-api.example.com';
+const KEY = 'offline-queue/v1';
 
-The library, the demo server, the simulator and the scenarios are all in [the repo](https://github.com/Ernesto-tha-great/checked-luggage). If you break it, tell me how. That's the fun part.
+// The same two methods as fileStorage, backed by AsyncStorage. The whole queue
+// lives under one key, so every save replaces it in a single write.
+const asyncStorage: Storage = {
+  async load() {
+    const raw = await AsyncStorage.getItem(KEY);
+    return raw ? (JSON.parse(raw) as QueuedRequest[]) : [];
+  },
+  async save(items) {
+    await AsyncStorage.setItem(KEY, JSON.stringify(items));
+  },
+};
+
+export const queue = new OfflineQueue({
+  baseUrl: API,
+  storage: asyncStorage,
+  probe: createProbe(`${API}/generate_204`),
+  createId: randomUUID,
+});
+```
+
+Replace `https://your-api.example.com` with your API's address. Your server needs the same two things ours has: a `/generate_204` route, and the idempotency key check from Step 4.
+
+We're passing `randomUUID` from expo-crypto because React Native doesn't have `crypto.randomUUID()` built in.
+
+Next, create lib/useOfflineQueue.ts:
+
+```ts
+import NetInfo from '@react-native-community/netinfo';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
+import { queue } from './offline';
+
+export function useOfflineQueue() {
+  const [pending, setPending] = useState(0);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flush = useCallback(async () => {
+    if (timer.current) clearTimeout(timer.current);
+    await queue.flush();
+    setPending(await queue.pending());
+
+    // Come back when the next item is due. If iOS suspends the app, this timer
+    // fires late or never, and that's fine: the schedule is saved with the items.
+    const wakeAt = queue.nextWakeAt();
+    if (wakeAt !== null) timer.current = setTimeout(flush, Math.max(0, wakeAt - Date.now()));
+  }, []);
+
+  useEffect(() => {
+    void flush();
+    const appState = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void flush();
+    });
+    // NetInfo only says *something* changed. The probe decides if it's worth sending.
+    const stopNetInfo = NetInfo.addEventListener((state) => {
+      if (state.isConnected) void flush();
+    });
+    return () => {
+      appState.remove();
+      stopNetInfo();
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, [flush]);
+
+  const save = useCallback(
+    async (path: string, body: unknown) => {
+      await queue.enqueue(path, body); // on disk: safe to say "Saved"
+      setPending(await queue.pending());
+      void flush(); // the UI never waits for the network
+    },
+    [flush],
+  );
+
+  return { pending, save };
+}
+```
+
+The hook flushes the queue in three situations: when the screen mounts, when the app comes back to the foreground, and when NetInfo says the network changed. NetInfo is only a hint here. The probe decides whether it's actually worth sending.
+
+After every flush, it sets a timer for the next request that's due. If iOS suspends the app, that timer fires late or not at all, and that's fine: the schedule is saved with the requests, so the next flush picks up where it left off.
+
+Finally, replace App.tsx with a screen that uses it:
+
+```tsx
+import { useState } from 'react';
+import { Button, Text, TextInput, View } from 'react-native';
+import { useOfflineQueue } from './lib/useOfflineQueue';
+
+export default function App() {
+  const { pending, save } = useOfflineQueue();
+  const [sku, setSku] = useState('');
+  const [message, setMessage] = useState('');
+
+  async function onSave() {
+    await save('/orders', { sku, qty: 1 });
+    setSku('');
+    setMessage('Saved'); // true the moment save() resolves: it's on disk
+  }
+
+  return (
+    <View style={{ padding: 24, gap: 12 }}>
+      <TextInput placeholder="SKU" value={sku} onChangeText={setSku} style={{ borderWidth: 1, padding: 8 }} />
+      <Button title="Save order" onPress={onSave} disabled={!sku} />
+      <Text>{message}</Text>
+      {pending > 0 && <Text>{pending} waiting to sync</Text>}
+    </View>
+  );
+}
+```
+
+If your app uses Expo Router, put this in app/index.tsx instead, and change the import to `../lib/useOfflineQueue`.
+
+`save()` resolves as soon as the order is on disk, so "Saved" is true the moment it shows, network or no network. Try it on a real device: turn on airplane mode, save a couple of orders, then turn it off and watch the "waiting to sync" count go down.
+
+## How It All Works
+
+Let's review how the different pieces work together:
+
+![The life of one request: queued on disk, sent with its key, then delivered, rejected on a 4xx, or waiting with backoff on a network error.](images/item-lifecycle.svg)
+
+1. The user taps "Save". `enqueue` gives the request a unique ID and writes it to disk before resolving, so the app can say "Saved" straight away.
+2. `flush` runs on launch, on resume, on network changes and on a timer. It asks the probe first. If your server doesn't answer with a 204, every due request waits a little longer, and none of them loses an attempt.
+3. If the server is reachable, each due request is sent with its ID in the `Idempotency-Key` header.
+4. A 2xx removes it from the queue. A 4xx removes it and tells the app why. A network error, a 408, a 429 or a 5xx keeps it, with a backoff that grows after every failure.
+5. On the server, a key it has seen before gets the saved reply back, and no new order. So a retry after a lost response can never create a second order.
+
+## Conclusion
+
+That was a lot of code for something your users will hopefully never notice, which is kind of the point. When the network is bad, nothing they save gets lost, and nothing gets saved twice.
+
+If I were taking this further, the next things I'd do are:
+
+- Store idempotency keys in your database, in the same transaction as the order, with a unique constraint on the key.
+- Expire old keys after a day or so. Stripe, for example, removes them once they're at least 24 hours old.
+- Show users which of their changes are still waiting to sync, so they're never left guessing.
+
+You can find the complete project [here](https://github.com/Ernesto-tha-great/checked-luggage). If you run into any issues while following along, drop a comment or reach out to me. Thanks for reading!

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" width="1200" height="470" role="img" aria-labelledby="t d">
 <title id="t">Lifecycle of a queued request</title>
-<desc id="d">A request enters Queued on enqueue. When due and the probe says online, it goes In flight. From In flight it is Delivered, goes to Waiting on a network failure or a retry verdict, or goes to Dead letter when rejected or retried too often. Waiting returns to Queued when its backoff expires. A failed probe keeps the request Queued without burning an attempt.</desc>
+<desc id="d">A request enters Queued on enqueue. When due and the probe says online, it goes In flight. From In flight it is Delivered on a 2xx, goes to Waiting on a network failure, 408, 429 or 5xx, or goes to Dead letter on any other 4xx. Waiting returns to Queued when its backoff expires. A failed probe keeps the request Queued without burning an attempt.</desc>
 <style>
   svg { --surface:#fcfcfb; --box:#ffffff; --line:#c9c8c2; --ink:#0b0b0b; --ink-2:#52514e; --accent:#2a78d6; --good:#0a7d0a; --bad:#c03434; --good-bg:#e3f4e3; --bad-bg:#fbe5e5; --wait-bg:#fdf2d6; }
   @media (prefers-color-scheme: dark) { svg { --surface:#1a1a19; --box:#2c2c2a; --line:#4a4a46; --ink:#ffffff; --ink-2:#c3c2b7; --accent:#5598e7; --good:#3fbf3f; --bad:#e66767; --good-bg:#1e3a1e; --bad-bg:#3d2020; --wait-bg:#3a3220; } }
@@ -23,7 +23,7 @@
 
 <rect x="500" y="190" width="210" height="76" rx="12" fill="var(--box)" stroke="var(--line)" stroke-width="1.5"/>
 <text class="st" x="520" y="222">In flight</text>
-<text class="sb" x="520" y="246">part of a batch</text>
+<text class="sb" x="520" y="246">one POST, with its key</text>
 
 <rect x="900" y="80" width="250" height="76" rx="12" fill="var(--good-bg)"/>
 <text class="st" x="920" y="112" style="fill:var(--good)">Delivered</text>
@@ -45,22 +45,22 @@
 <text class="el" x="362" y="218">due + online</text>
 
 <path class="edge" d="M200 190 C 200 120, 290 120, 290 186"/>
-<text class="el" x="150" y="104">probe: offline or captive portal</text>
+<text class="el" x="150" y="104">probe: no 204 from your server</text>
 <text class="sb" x="150" y="122">wait; no attempt is burned</text>
 
 <path class="edge" d="M710 210 C 800 210, 820 118, 896 118"/>
 <text class="el" x="760" y="160">delivered</text>
 
 <path class="edge" d="M710 246 C 800 246, 820 338, 896 338"/>
-<text class="el" x="740" y="372">rejected, or "retry"</text>
-<text class="el" x="740" y="388">too many times</text>
+<text class="el" x="740" y="372">any other 4xx:</text>
+<text class="el" x="740" y="388">the server said no</text>
 
 <path class="edge" d="M605 266 V346"/>
 <text class="el" x="614" y="300">network failure,</text>
-<text class="el" x="614" y="316">429 / 5xx, "retry"</text>
+<text class="el" x="614" y="316">408, 429 or 5xx</text>
 
 <path class="edge" d="M500 388 H245 V270"/>
 <text class="el" x="300" y="378">nextAttemptAt reached</text>
 
-<text class="note" x="40" y="455">Network failures never dead-letter a request. Only the server's own verdicts can.</text>
+<text class="note" x="40" y="455">A bad network never throws a request away. Only a 4xx from your server can.</text>
 </svg>

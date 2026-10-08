@@ -1,58 +1,81 @@
-import { createServer, type IncomingMessage, type Server } from 'node:http';
-import { OrderService, type BatchItem } from './core.js';
+import { createServer, type IncomingMessage } from 'node:http';
 
-export interface AppOptions {
-  service: OrderService;
-  /**
-   * Probability of processing a batch and then dropping the connection before the
-   * response leaves. This is the failure that turns naive retries into duplicates.
-   */
-  dropResponseRate?: number;
+export interface Order {
+  id: number;
+  sku: string;
+  qty: number;
+}
+
+export interface ServerOptions {
+  /** Share of orders that get saved, and then the connection drops before the reply. */
+  dropRate?: number;
   random?: () => number;
 }
 
-export function createApp(options: AppOptions): Server {
+export function createOrdersServer(options: ServerOptions = {}) {
+  const dropRate = options.dropRate ?? 0;
   const random = options.random ?? Math.random;
 
-  return createServer(async (req, res) => {
+  const orders: Order[] = [];
+  const replies = new Map<string, string>();
+  let down = false;
+
+  const server = createServer(async (req, res) => {
+    if (down) {
+      req.socket.destroy();
+      return;
+    }
+
     if (req.method === 'GET' && req.url === '/generate_204') {
       res.writeHead(204).end();
       return;
     }
 
     if (req.method === 'GET' && req.url === '/orders') {
-      res.writeHead(200, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ executions: options.service.executions }));
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(orders));
       return;
     }
 
-    if (req.method === 'POST' && req.url === '/batch') {
-      let items: BatchItem[];
-      try {
-        const parsed = JSON.parse(await readBody(req)) as { items?: BatchItem[] };
-        if (!Array.isArray(parsed.items)) throw new Error('items must be an array');
-        items = parsed.items;
-      } catch (err) {
-        res.writeHead(400, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ error: (err as Error).message }));
+    if (req.method === 'POST' && req.url === '/orders') {
+      const key = req.headers['idempotency-key'];
+      if (typeof key === 'string' && replies.has(key)) {
+        // We've seen this key before. Send the same answer, don't make a new order.
+        res.writeHead(201, { 'content-type': 'application/json' }).end(replies.get(key));
         return;
       }
 
-      const results = options.service.processBatch(items);
+      const body = JSON.parse(await readBody(req)) as Partial<Order>;
+      if (typeof body.sku !== 'string' || !Number.isInteger(body.qty) || body.qty! < 1) {
+        res.writeHead(422, { 'content-type': 'application/json' }).end('{"error":"sku and qty are required"}');
+        return;
+      }
 
-      if (random() < (options.dropResponseRate ?? 0)) {
-        // The order is saved. The phone will never know.
+      const order: Order = { id: orders.length + 1, sku: body.sku, qty: body.qty! };
+      orders.push(order);
+      const reply = JSON.stringify(order);
+      if (typeof key === 'string') replies.set(key, reply);
+
+      if (random() < dropRate) {
+        // The order is saved. The phone will never hear about it.
         req.socket.destroy();
         return;
       }
 
-      res.writeHead(200, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ results }));
+      res.writeHead(201, { 'content-type': 'application/json' }).end(reply);
       return;
     }
 
-    res.writeHead(404, { 'content-type': 'application/json' }).end('{"error":"not found"}');
+    res.writeHead(404).end();
   });
+
+  return {
+    server,
+    orders,
+    /** Simulate an outage: every request gets its connection dropped. */
+    setDown(value: boolean) {
+      down = value;
+    },
+  };
 }
 
 function readBody(req: IncomingMessage): Promise<string> {

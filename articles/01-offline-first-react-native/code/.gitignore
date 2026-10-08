@@ -1,2 +1,4 @@
 node_modules
-dist
+queue.json
+queue.json.tmp
+chaos-queue.json*

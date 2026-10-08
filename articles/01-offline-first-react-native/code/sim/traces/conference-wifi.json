@@ -1,9 +1,0 @@
-{
-  "name": "conference-wifi",
-  "description": "Fifteen minutes on conference Wi-Fi: a captive portal for the first four minutes (until the user signs in), then a congested network with high latency and 15% loss.",
-  "source": "synthetic",
-  "segments": [
-    { "seconds": 240, "state": "captive", "latencyMs": 200 },
-    { "seconds": 660, "state": "up", "latencyMs": 600, "lossRate": 0.15 }
-  ]
-}

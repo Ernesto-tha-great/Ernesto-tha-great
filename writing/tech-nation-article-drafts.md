@@ -10,7 +10,7 @@ Ernest Nnamdi · Developer Relations Engineer · v5 · October 2026
 
 # Part 1: Core engineering (1–5)
 
-## 1. Offline-First React Native: Building a Write Queue That Survives Bad Networks
+## 1. Offline-First in Practice: Building a Write Queue for React Native With TypeScript
 
 **Subtitle:** Treat every request like checked luggage: tag it, queue it, and make sure it never arrives twice.
 
@@ -303,19 +303,9 @@ Two of your three recommendation letters should come from people outside your co
 
 **Expect Exceptional Promise, not Talent.** You don't have a publication record yet, so Promise is the realistic route. This plan is built for it.
 
-## Voice cheat sheet (mogwai-style, not mogwai's sentences)
+## Voice
 
-What to take from Justin Irabor (Craft Overflow):
-
-- **Title and subtitle.** The title says exactly what the article covers: the technology, the problem, and the method or result. It should read like a conference talk title, like his "Exploring Ethereum's ERC-721 Standard". The subtitle carries the wit, like his "Because NFTs are about way more than digital art". One joke per pair, and never in the title.
-- **One analogy per article.** Map every part of it to a mechanism, and say in one sentence where it breaks.
-- **Open with a confession.** Use a small, specific one: the bug you shipped, or the metric you trusted.
-- **Real conditions are the test lab, not the scenery.** That means latency, packet loss, token bills and p95s.
-- **Go to primary sources.** Link the spec, paper or changelog, quote it, and name its authors.
-- **Wit in the margins, precision in the middle.** Keep the code, numbers and claims dry. Cut words like "production-grade", "leverage" and "robust".
-- **At InfoQ, LeadDev and Towards Data Science, turn the jokes down.** Use the analogy in the intro and call back to it once. Put your numbers and method in the first 200 words. Write "we", and show the trade-offs.
-
-Don't borrow his signatures: "An African X's Guide to…" framing, "Look, I get it" openers, "minimum viable [noun]", Picasso, Heinlein, or "one fumble at a time".
+See [voice-guide.md](voice-guide.md). It's built from Ernest's published DZone and HackerNoon tutorials and Justin Irabor's Craft Overflow posts, and it replaces the earlier cheat sheet. Every article is a step-by-step code-along: the reader builds the project from an empty folder, and the repo is the finished version to check against.
 
 ## Review log
 
