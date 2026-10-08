@@ -1,120 +1,79 @@
-# Offline-First React Native: A Failure Taxonomy From Real Network Traces
+# Offline-First React Native: Building a Write Queue That Survives Bad Networks
 
 *Treat every request like checked luggage: tag it, queue it, and make sure it never arrives twice.*
 
-**By Ernest Nnamdi** · React Native, TypeScript, Networking · ~20 min read
-
-> **Quick summary:** "Offline-first" usually means "we cache some reads". The hard part is writes. In this tutorial we build a small, durable request queue for React Native. It persists every write before telling the user "Saved", tags each one with an idempotency key, refuses to trust NetInfo, backs off with jitter, and copes with batches that half succeed. Then we replay four network traces against it, and against three simpler strategies, to see which failures each one survives.
->
-> **Companion code:** [`checked-luggage`](./code), with the library, a demo API, the trace simulator and an Expo example. Every snippet below comes from it.
+**Ernest Nnamdi** · React Native · TypeScript · Networking
 
 ---
 
-## Table of contents
+A while back I built a small order-taking app for a sales team. It worked perfectly on my desk, which, in hindsight, is the least interesting place a mobile app will ever run.
 
-1. [The bug report every mobile team gets](#the-bug-report-every-mobile-team-gets)
-2. [The checked-luggage model](#the-checked-luggage-model)
-3. [A failure taxonomy for mobile writes](#a-failure-taxonomy-for-mobile-writes)
-4. [What we're building](#what-were-building)
-5. [Step 1: Check in before you say "Saved"](#step-1-check-in-before-you-say-saved)
-6. [Step 2: Tag every bag](#step-2-tag-every-bag)
-7. [Step 3: Don't trust NetInfo](#step-3-dont-trust-netinfo)
-8. [Step 4: Back off like you mean it](#step-4-back-off-like-you-mean-it)
-9. [Step 5: Batches that half succeed](#step-5-batches-that-half-succeed)
-10. [Step 6: Survive suspension and the app being killed](#step-6-survive-suspension-and-the-app-being-killed)
-11. [Step 7: Wire it into the app](#step-7-wire-it-into-the-app)
-12. [Replaying network traces](#replaying-network-traces)
-13. [Results](#results)
-14. [Trade-offs and what this doesn't solve](#trade-offs-and-what-this-doesnt-solve)
-15. [Further reading](#further-reading)
+The first bug report was a screenshot from a train: two identical orders, same customer, same minute. The second, from a different rep that same week, was an order that never showed up at all. Opposite bugs, same app. I spent a weekend convinced the backend was haunted.
 
----
+Reader, the backend was not haunted. The phone was doing exactly what phones do on trains, and my code was treating the network like a function call: send a request, get an answer. On a phone, the network behaves more like a postal service run by someone having a bad week. Requests vanish in tunnels. *Responses* vanish on the way back. Hotel Wi-Fi answers everything with a cheerful `200 OK` and a login page. And iOS will happily freeze your app halfway through a retry loop, then kill it to free up memory.
 
-## The bug report every mobile team gets
+Most "offline-first" advice is about reads: cache the data and show something while the network sulks. Writes are the harder half, because a write has to happen **exactly once**, and the network gives you no way of knowing whether it already did.
 
-<!-- If you have a real story here, use it. A specific bug you shipped beats any general opener. -->
+So this article is about writes. We're going to build a small write queue for React Native, called `checked-luggage`. Then we'll run it, and three simpler approaches, through a simulator that recreates the kinds of bad networks your users walk into every day, to see which approach survives what.
 
-Sooner or later, every team that ships a mobile app with a "Save" button gets one of two bug reports:
+Everything here is in the companion repo, [**github.com/Ernesto-tha-great/checked-luggage**](https://github.com/Ernesto-tha-great/checked-luggage), and every snippet below is lifted from it.
 
-- **"I placed the order and it never showed up."**
-- **"I placed the order once and got charged twice."**
+## The airline already solved this
 
-They look like opposite bugs, but they share a cause. In both cases the app treated the network as a function call: send the request, get an answer. On a phone, the network is closer to a postal service run by someone having a bad week. Requests vanish in tunnels. Responses vanish on the way back. Hotel Wi-Fi answers every request with a cheerful `200 OK` and a login page. And iOS will happily freeze your app halfway through a retry loop, then kill it to free memory.
+Airlines figured this problem out decades ago, with luggage.
 
-Most "offline-first" advice focuses on reads: cache the data and show something while the network sulks. Writes are harder, because a write has to happen **exactly once**, and the network gives you no way to know whether it already has.
+When you check a bag, you get a receipt before the bag goes anywhere. The bag gets a tag with a unique number. If it misses its flight, it goes on the next one. Bags travel together in the hold. At the other end, the tag means a bag can't be delivered to you twice. And if something can't be delivered at all, it ends up at the lost-luggage desk, not in a skip behind the terminal.
 
-This tutorial is about writes.
+Swap "bag" for "request" and you have the whole design:
 
-## The checked-luggage model
+- **The receipt:** the request is written to disk *before* the UI says "Saved".
+- **The tag:** every request gets an idempotency key when it's created, and keeps it through every retry.
+- **The next flight:** failed sends are retried with backoff.
+- **The hold:** requests travel in batches.
+- **The tag check:** the server looks at the key *before* doing the work.
+- **The lost-luggage desk:** requests the server refuses go to a dead-letter handler, where the user can see them.
 
-Airlines solved this problem decades ago, with luggage.
+The analogy breaks in one place, and it's the place that matters. A retry doesn't *move* the bag. It **copies** it. If the first copy already arrived, the tag is the only thing that tells the server it's looking at a duplicate. Keep that in your head; it's the reason Step 2 exists.
 
-| Luggage | Request queue |
-|---|---|
-| You check the bag in and get a receipt | The request is written to disk *before* the UI says "Saved" |
-| The bag gets a tag with a unique number | The request gets an idempotency key |
-| It missed its flight? It goes on the next one | Failed sends are retried, with backoff |
-| Bags travel together in the hold | Requests are sent in batches |
-| The destination checks tags, so a bag is never delivered twice | The server checks the key before doing the work |
-| Unclaimable bags go to the lost-luggage desk | Requests the server rejects go to a dead-letter handler |
+## Eight ways a write goes wrong
 
-**Where the analogy breaks:** a retry doesn't move the bag. It *copies* it. If the first copy already arrived, only the tag tells the server it's looking at a duplicate. That one difference is why the tag matters more than anything else in this article.
+Before writing any code, I find it helps to name the failures. These are the eight I designed the queue around. Pay attention to the second column, which shows what NetInfo, React Native's go-to connectivity library, reports while each one is happening.
 
-## A failure taxonomy for mobile writes
+| # | Failure | NetInfo says | What a naive client does |
+|---|---|---|---|
+| 1 | **Total loss** (tunnel, flight mode) | offline | Shows an error; the write is gone unless the user retypes it |
+| 2 | **Lost response** (the server did the work, the reply died) | online | Retries and creates a **duplicate** |
+| 3 | **Captive portal** (hotel or conference Wi-Fi) | online | Treats a `200 OK` login page as success, or burns its retries |
+| 4 | **Black hole** (one bar of signal, or a SIM out of data) | online | Waits for a timeout, again and again |
+| 5 | **Thundering herd** (a whole train reconnects at once) | online | Retries on the same schedule as every other phone |
+| 6 | **Partial batch** (three items succeed, two fail) | online | Retries all five, or none |
+| 7 | **Poison request** (the server will never accept it) | online | Retries forever |
+| 8 | **Suspend, then kill** (iOS freezes the app, then reclaims it) | – | Loses everything it was holding in memory |
 
-Before writing any code, it helps to name the failures. Here are the eight I designed the queue around. The column that matters most is the third one: what NetInfo, React Native's standard connectivity library, reports while each failure is happening.
-
-| # | Failure | NetInfo says | What a naive client does | The fix |
-|---|---|---|---|---|
-| 1 | **Total loss**: a tunnel or flight mode | offline | Shows an error. The write is gone unless the user retypes it | Persist before sending (Step 1) |
-| 2 | **Lost response**: the server did the work, the reply died | online | Retries and creates a **duplicate** | Idempotency keys (Step 2) |
-| 3 | **Captive portal**: hotel or conference Wi-Fi | online | Reads a `200 OK` HTML page as success, or burns retries | Probe and validate content (Step 3) |
-| 4 | **Black hole**: one bar of signal, or a SIM over its data cap | online | Waits for a timeout, again and again | Probe with a short timeout and back off (Steps 3–4) |
-| 5 | **Thundering herd**: everyone reconnects at once | online | Retries on the same schedule as every other phone | Full jitter (Step 4) |
-| 6 | **Partial batch**: three items succeed, two fail | online | Retries all five, or none | Per-item verdicts (Step 5) |
-| 7 | **Poison request**: the server will never accept it | online | Retries forever | Dead-letter on server rejection (Step 5) |
-| 8 | **Suspension and kill**: iOS freezes the app, then reclaims it | n/a | Loses everything held in memory | Persisted schedule plus lifecycle hooks (Step 6) |
-
-Notice how many rows say "online". NetInfo isn't broken. It answers a different question ("is there a network interface?") from the one you care about ("will my request reach my server?").
+Count the "online"s. NetInfo isn't lying to you. It's answering a different question ("does this phone have a network interface?") from the one you care about ("will my request reach my server?"). The fixes below map onto these rows, and I'll point back to them as we go.
 
 ## What we're building
 
 ![Architecture of the checked-luggage queue: enqueue writes a tagged request to storage; a scheduler triggers flush, which probes the server, sends tagged batches and applies per-item verdicts; the server checks each tag before doing the work.](./images/architecture.svg)
 
-There are three moving parts:
+There are three pieces:
 
-1. **`OfflineQueue`**, a small TypeScript class with no React Native dependencies. It owns persistence, scheduling, batching and verdicts.
-2. **A server contract:** `POST /batch` takes tagged items and returns one verdict per item. `GET /generate_204` answers `204 No Content` for the reachability probe.
-3. **A scheduler** in the app. It calls `flush()` when the app comes to the foreground, when NetInfo reports a change, and when the queue says its next item is due.
+1. **`OfflineQueue`**, a small TypeScript class with no React Native dependencies. It handles persistence, scheduling, batching and the server's verdicts.
+2. **A server contract.** `POST /batch` takes tagged items and returns one verdict per item, and `GET /generate_204` replies `204 No Content` so the app can check it's really talking to your server. The repo includes a demo server that does both.
+3. **A scheduler** in the app that calls `flush()` when the app comes to the foreground, when NetInfo reports a change, and when the queue says something is due.
 
-Here's the project layout:
-
-```text
-checked-luggage/
-├── src/
-│   ├── queue.ts            # OfflineQueue
-│   ├── http-transport.ts   # POST /batch, with failure classification
-│   ├── probe.ts            # GET /generate_204
-│   ├── backoff.ts          # full jitter
-│   └── storage.ts          # AsyncStorage / MMKV adapter
-├── server/                 # demo orders API that honours tags
-├── sim/                    # network simulator + traces
-├── bench/                  # replays traces, renders the chart
-├── test/                   # unit + end-to-end tests
-└── example/                # Expo app
-```
-
-To follow along:
+To follow along you'll need Node 20 or newer. A phone with Expo Go is optional; you only need it for the last step.
 
 ```bash
-git clone <repo> && cd checked-luggage
+git clone https://github.com/Ernesto-tha-great/checked-luggage.git
+cd checked-luggage
 npm install
-npm test
+npm test        # 19 tests, a couple of them over real HTTP
 ```
 
 ## Step 1: Check in before you say "Saved"
 
-The most important line in the whole queue is an `await` you might be tempted to skip:
+The most important line in the whole queue is an `await` you'll be tempted to skip:
 
 ```ts
 // src/queue.ts
@@ -127,7 +86,7 @@ async enqueue(request: NewRequest): Promise<QueuedRequest> {
     createdAt: now,
     attempts: 0,
     serverRetries: 0,
-    nextAttemptAt: now,       // due immediately
+    nextAttemptAt: now,       // due straight away
   };
   this.items.push(item);
   await this.persist();       // on disk before we resolve
@@ -135,9 +94,9 @@ async enqueue(request: NewRequest): Promise<QueuedRequest> {
 }
 ```
 
-`enqueue()` resolves only after the request is on disk. That gives the UI a clear contract: when the promise resolves, it's safe to say "Saved", because the request will survive a tunnel, a crash or a force-quit.
+`enqueue()` doesn't resolve until the request is on disk. That gives the UI a simple rule: when the promise resolves, it's safe to say "Saved", because that order will survive a tunnel, a crash or a force-quit. This is row 1 of the table, handled.
 
-Storage is deliberately boring. The whole queue is stored as **one JSON value under one key**, so every write replaces the queue in a single operation:
+Storage is deliberately boring. The whole queue lives under **one key** as one JSON string, so every save replaces it in one go:
 
 ```ts
 // src/storage.ts
@@ -154,9 +113,9 @@ export function createKeyValueStorage(kv: KeyValueStore, key = 'checked-luggage/
 }
 ```
 
-AsyncStorage's `getItem` and `setItem` already match this interface. For MMKV, a two-line wrapper does the job.
+AsyncStorage already has `getItem` and `setItem`, so it plugs straight in. MMKV needs a two-line wrapper.
 
-One subtle bug is worth guarding against: two saves racing each other. Say `enqueue()` and `flush()` both call `persist()`, and the older snapshot finishes writing last. It overwrites the newer one, and a request quietly disappears. The fix is to chain the writes:
+There's one sneaky bug to guard against: two saves racing each other. If `enqueue()` and `flush()` both save, and the *older* snapshot happens to finish writing last, it overwrites the newer one and a request quietly vanishes. (Ask me how I know.) The fix is to chain the writes, so they always land in the order they were made:
 
 ```ts
 // src/queue.ts
@@ -167,19 +126,19 @@ private persist(): Promise<void> {
 }
 ```
 
-> **Tip:** Keep the queue small and boring. A queue that holds thousands of items is a sync engine, and that's a different article. If yours grows that large, move it to SQLite, with one row per item.
+If your queue ever holds thousands of items, you've built a sync engine, and you should move it to SQLite with one row per item. For a queue of pending writes, a single key is fine.
 
 ## Step 2: Tag every bag
 
-Here's failure #2 from the taxonomy, drawn out:
+This is the bug from that train screenshot, drawn out:
 
 ![Sequence diagram. Without a tag, a lost response makes the phone retry and the server creates a second order. With a tag, the server recognises the retry and returns the stored verdict without creating a new order.](./images/lost-response.svg)
 
-From the phone's side, a lost request and a lost response look identical: a timeout. The phone has no way to tell them apart. Only the server can, and only if the request carries something that identifies it across retries. That's the idempotency key: a random ID generated **once, when the request is created**, and reused on every retry.
+From the phone's side, a lost request and a lost response look exactly the same: a timeout. The phone can't tell them apart. Only the server can, and only if every request carries something that stays the same across retries. That's the idempotency key: a random ID generated **once, when the request is created**, and sent again on every retry.
 
-On the client, it's the `id` from Step 1. On the server, the rule is simple:
+On the client, it's the `id` from Step 1. On the server, there's one rule:
 
-> **Check the tag *before* doing the work, and store the tag *together with* the work.**
+> Check the tag *before* doing the work, and save the tag *together with* the work.
 
 ```ts
 // server/core.ts
@@ -197,7 +156,7 @@ if (this.options.honourIdempotencyKeys) this.processed.set(item.id, result);
 return result;
 ```
 
-The demo uses a `Map`. In Postgres, the same idea looks like this:
+The demo server uses a `Map` to keep things readable. In Postgres it looks like this:
 
 ```sql
 CREATE TABLE idempotency_keys (
@@ -207,21 +166,21 @@ CREATE TABLE idempotency_keys (
 );
 
 BEGIN;
--- If two copies arrive at once, the second insert waits for the first transaction,
--- then inserts nothing.
+-- If two copies arrive together, the second insert waits for the first
+-- transaction to finish, then inserts nothing.
 INSERT INTO idempotency_keys (key, result)
 VALUES ($1, '{"status":"delivered"}')
 ON CONFLICT (key) DO NOTHING;
 
--- If that inserted 0 rows, this is a copy: ROLLBACK and return the stored result.
--- Otherwise, do the real work in the same transaction:
+-- 0 rows inserted? It's a copy: ROLLBACK and return the stored result.
+-- Otherwise, do the real work in the same transaction.
 INSERT INTO orders (sku, qty) VALUES ($2, $3);
 COMMIT;
 ```
 
-Putting the key and the order in the same transaction is the whole trick. If the order insert fails, the key goes with it, so the retry gets a real second chance instead of a stored "success" for work that never happened.
+The key and the order living in the *same* transaction is the whole trick. If the order insert fails, the key is rolled back with it, so the retry gets a real second chance instead of a stored "success" for work that never happened. Brandur Leach's write-up on Stripe-style idempotency keys (linked at the end) goes much deeper on this, and it's worth your evening.
 
-You can watch this happen over real HTTP. The test suite starts the demo API with `dropResponseRate: 0.5` and a random source that drops the *first* response:
+You don't have to take my word for any of this. The test suite starts the demo server, makes it drop the *first* response on the floor, and checks what happens:
 
 ```ts
 // test/http.test.ts
@@ -236,17 +195,11 @@ it('places the order exactly once when the server honours the tag', async () => 
 });
 ```
 
-> **Note:** For single requests, the IETF's draft [`Idempotency-Key` header](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/) is the standard place to put the key. We send batches, so each item carries its own `id` in the body instead.
-
-React Native has no `crypto.randomUUID()` out of the box, so pass one in. The example uses `expo-crypto`:
-
-```ts
-createId: () => Crypto.randomUUID(),
-```
+Two small notes. If you're sending one request at a time rather than batches, the IETF's draft `Idempotency-Key` header is the standard place to put the key. And React Native doesn't ship `crypto.randomUUID()`, so pass in your own ID generator; the example app uses `expo-crypto`.
 
 ## Step 3: Don't trust NetInfo
 
-NetInfo tells you whether the phone has a network interface. Failures #3 and #4 both happen with the interface up. So before sending a batch, the queue asks your own server something tiny:
+Rows 3 and 4 both happen with the network interface up, so NetInfo can't help you there. Instead, before sending a batch, the queue asks *your own server* something tiny:
 
 ```ts
 // src/probe.ts
@@ -275,9 +228,9 @@ export function createReachabilityProbe(options: ProbeOptions): () => Promise<Re
 }
 ```
 
-This is the same trick Android uses for its own connectivity check. A `204 No Content` is hard to fake by accident. A captive portal either redirects you or serves its login page with a `200`, and both fail the check.
+I borrowed this trick from Android, which checks its own connectivity the same way. A `204 No Content` is hard to fake by accident. A captive portal either redirects you or serves its login page with a `200`, and both fail the check.
 
-The transport makes the same check from a different angle. A response only counts if it's the JSON you expected:
+The transport is just as suspicious. A response only counts if it's the JSON we asked for:
 
 ```ts
 // src/http-transport.ts
@@ -288,7 +241,7 @@ if (!contentType.includes('application/json')) {
 }
 ```
 
-The most important design decision lives in `flush()`. **When the probe fails, no attempt is burned:**
+The decision I'm proudest of lives in `flush()`. **When the probe fails, no attempt is burned:**
 
 ```ts
 // src/queue.ts
@@ -303,18 +256,18 @@ if (this.options.probe && !heardRecently) {
     this.notBefore = this.now() + Math.max(this.baseDelayMs, delay);
     return report;
   }
-  // ...reset the probe backoff and carry on
+  // ...reset the probe's backoff and carry on
 }
 ```
 
-Two details here came out of testing:
+Two details in there came straight out of testing:
 
-- **The probe costs a round trip.** On high-latency networks that is real time, so the queue skips the probe if the server answered anything in the last 30 seconds (`probeFreshnessMs`). On the conference Wi-Fi trace, this brought the median delivery time down from 2.8 s to 1.4 s, level with the strategies that don't probe at all.
-- **Offline time shouldn't count against an item.** If every failed send while offline increased the item's backoff, a 10-minute tunnel would leave items waiting 60 seconds between tries *after* the train leaves. Backing off the probe instead keeps the item's own schedule fresh.
+- **The probe costs a round trip.** On a slow network that's real time, so the queue skips it if the server has answered anything in the last 30 seconds (`probeFreshnessMs`). On the simulated conference Wi-Fi, that one change cut the median delivery time from 2.8 s to 1.4 s, the same as approaches that never probe at all.
+- **Time offline shouldn't count against a request.** If every failed send during a ten-minute tunnel made the request's backoff longer, it would still be waiting a full minute between tries *after* the train pulled into a station. Backing off the probe instead keeps the request's own schedule fresh. You'll see this pay off in the results.
 
 ## Step 4: Back off like you mean it
 
-When a train leaves a tunnel, every phone on it reconnects within the same second. If they all retry on the same exponential schedule (1 s, 2 s, 4 s…), they hit your API in synchronised waves. The fix is **full jitter**: pick a random delay between zero and the exponential ceiling.
+When a train comes out of a tunnel, every phone on it reconnects in the same second. If they all retry on the same schedule (1 s, 2 s, 4 s…), your API gets hit in neat, synchronised waves. That's row 5. The fix is **full jitter**: wait a random amount of time between zero and the exponential ceiling.
 
 ```ts
 // src/backoff.ts
@@ -324,9 +277,9 @@ export function fullJitterDelay(attempt: number, baseMs: number, capMs: number, 
 }
 ```
 
-Marc Brooker's AWS write-up (linked in [Further reading](#further-reading)) compares the jitter variants. Full jitter does about as well as anything else at spreading load, and it's the simplest.
+Marc Brooker's post on the AWS Architecture Blog compares the different flavours of jitter. Full jitter spreads the load out about as well as any of them, and it's the simplest to write.
 
-If the server asks for a pause with `Retry-After`, that wins over the random delay:
+If the server says how long to wait, with a `Retry-After` header, that wins over the random number:
 
 ```ts
 // src/queue.ts
@@ -338,11 +291,11 @@ private scheduleRetry(item: QueuedRequest, reason: string, minDelayMs = 0): void
 }
 ```
 
-Notice `nextAttemptAt` is a **timestamp stored on the item**, not a `setTimeout`. That matters in Step 6.
+Notice that `nextAttemptAt` is a **timestamp saved on the item**, not a `setTimeout`. Hold that thought until Step 6.
 
 ## Step 5: Batches that half succeed
 
-Sending one request per item is simple, but on a slow link each request pays the full round trip. So the queue sends batches of up to 20 (`maxBatchSize`), and the server answers with **one verdict per item**:
+Sending one request per order is simple, but on a slow link each one pays a full round trip. So the queue sends batches of up to 20, and the server replies with **one verdict per item**:
 
 ```json
 {
@@ -354,7 +307,7 @@ Sending one request per item is simple, but on a slow link each request pays the
 }
 ```
 
-Each verdict sends the item down a different path:
+Each verdict sends a request down a different path:
 
 ![State diagram. Queued goes to In flight when due and online. In flight goes to Delivered, to Waiting on a network failure or retry verdict, or to Dead letter when rejected or retried too often. Waiting returns to Queued when its backoff expires. A failed probe keeps the item Queued without burning an attempt.](./images/item-lifecycle.svg)
 
@@ -389,11 +342,11 @@ for (const item of batch) {
 }
 ```
 
-Three rules are hiding in that block:
+There are three rules hiding in that block, covering rows 6 and 7:
 
-1. **A missing verdict means "retry", never "delivered".** If the server forgets an item, assume it didn't happen. The tag makes it safe to send it again.
-2. **Only the server can dead-letter an item.** Network failures (thrown `TransportError`s) back off forever. Five rejections from the server end it. A request should never go to the lost-luggage desk just because the airport was closed.
-3. **When a batch fails at the network level, stop.** If batch one timed out, don't fire batches two to five into the same black hole:
+1. **A missing verdict means "retry", never "delivered".** If the server forgets to mention an item, assume it didn't happen. The tag makes sending it again safe.
+2. **Only the server can send a request to the lost-luggage desk.** Network failures back off forever. A clear "no" from the server, or too many "try again later"s, ends it. A request should never be thrown away because the *airport* was closed.
+3. **If a batch fails at the network level, stop.** If batch one just timed out, don't fire batches two to five into the same black hole:
 
 ```ts
 } catch (err) {
@@ -404,18 +357,15 @@ Three rules are hiding in that block:
 }
 ```
 
-Dead-lettered items are handed to `onDeadLetter`. **Show them to the user.** A silently dropped order is worse than an error message.
+Dead-lettered requests go to an `onDeadLetter` callback. Please show them to the user. A silently dropped order is worse than an error message, and it's a much worse support ticket.
 
-## Step 6: Survive suspension and the app being killed
+## Step 6: Survive being suspended and killed
 
-Failure #8 is the one most hand-rolled retry loops miss. When the user locks the phone, iOS suspends your JavaScript. Timers stop. If memory runs short, the OS kills the app without warning. Whatever lived only in memory, including your retry loop and its pending requests, is gone.
+Row 8 is the one most hand-rolled retry loops miss. Lock the phone and iOS suspends your JavaScript; timers stop. If memory gets tight, the OS kills the app without asking. Whatever lived only in memory goes with it: your retry loop, your pending requests, all of it.
 
-The queue survives this because of two choices already made:
+The queue survives this because of two decisions we've already made. Every request is **on disk** (Step 1), and every request's schedule is a **saved timestamp** (Step 4), not a timer. That means a timer is only ever a nudge. If it fires late, or never fires at all, nothing is lost. The next time the app comes to the foreground, `flush()` sends whatever is due.
 
-- Every item is **on disk** (Step 1).
-- Every item's schedule is a **persisted timestamp**, `nextAttemptAt` (Step 4), not a timer.
-
-So a timer is only a nudge. If it fires late, or never, nothing is lost. The next time the app comes to the foreground, `flush()` sends whatever is due. The scheduler hook wires that up:
+Here's the hook that wires that up in the app:
 
 ```ts
 // example/src/useOfflineQueue.ts
@@ -452,7 +402,7 @@ useEffect(() => {
 }, [flushAndReschedule]);
 ```
 
-`flush()` is also **single-flight**. If the AppState listener, the NetInfo listener and the timer all fire at the same moment, they share one flush instead of sending the same batch three times:
+Three things can trigger a flush at the same moment: the app coming back, NetInfo, and the timer. So `flush()` is single-flight, meaning simultaneous callers share one flush instead of sending the same batch three times:
 
 ```ts
 flush(): Promise<FlushReport> {
@@ -463,11 +413,11 @@ flush(): Promise<FlushReport> {
 }
 ```
 
-> **What about syncing in the background?** Both platforms offer scheduled background work: BGTaskScheduler on iOS and WorkManager on Android. Expo wraps them in a background-task module. It's worth adding, but treat it as a bonus. The OS decides when (and whether) your task runs, often no more than every 15 minutes. The foreground path above has to be correct on its own.
+What about syncing while the app is in the background? Both platforms will run scheduled background work for you (BGTaskScheduler on iOS, WorkManager on Android), and Expo wraps both. It's worth adding, but treat it as a bonus: the OS decides when, and whether, your task runs, and that's often no more than once every 15 minutes. The foreground path above has to be correct on its own.
 
 ## Step 7: Wire it into the app
 
-With the queue and the hook in place, the screen itself is almost boring, which is the point:
+With the queue and the hook in place, the screen itself is almost boring. That's the goal:
 
 ```tsx
 // example/App.tsx
@@ -487,7 +437,7 @@ const onSave = async () => {
 </View>
 ```
 
-The queue lives in its own module, so the whole app shares **one instance**. Two queues writing to the same storage key would overwrite each other's snapshots:
+Create the queue once, in its own module, and share that one instance across the app. Two queues writing to the same storage key would overwrite each other:
 
 ```ts
 // example/src/queue.ts
@@ -502,20 +452,26 @@ export const queue = new OfflineQueue({
 });
 ```
 
-The example README walks through running it against the demo API, including how to make the server drop responses (`DROP_RESPONSE_RATE=0.5`) and ignore tags (`IGNORE_KEYS=1`), so you can watch duplicates appear and disappear on a real device.
+To try it on a real phone, start the demo server and point the Expo app at your laptop:
 
-## Replaying network traces
+```bash
+npm run server                                        # orders API on :8787
+EXPO_PUBLIC_API_URL=http://<your-laptop-ip>:8787 npx expo start
+```
 
-Unit tests prove each rule in isolation. They can't tell you how the rules behave together over twenty minutes of a bad network. For that, the repo has a small, deterministic network simulator.
+Then be mean to it. Restart the server with `DROP_RESPONSE_RATE=0.5` and it will do the work and then hang up on half your requests. Every order still shows up exactly once at `GET /orders`. Add `IGNORE_KEYS=1` and watch the duplicates roll in. On iOS, the Network Link Conditioner in developer settings with 100% loss gives you a decent dead zone: NetInfo keeps saying "connected", the probe disagrees, and the badge counts your orders piling up. The example's README has the full walkthrough.
 
-### Describing a network
+## Putting it through bad networks
 
-A trace is a timeline of link states, plus app lifecycle events:
+Unit tests prove each rule on its own. They can't tell you how the rules behave *together* over twenty minutes of awful connectivity. I don't have a lab full of phones riding trains, so I did the next best thing: I wrote a small simulator that replays a bad network against the queue, and against three simpler approaches, on a fake clock.
+
+### Describing a bad network
+
+A scenario is a timeline of what the network is doing, plus what the app is doing:
 
 ```json
 {
   "name": "underground-commute",
-  "source": "synthetic",
   "segments": [
     { "seconds": 90,  "state": "up", "latencyMs": 120 },
     { "seconds": 150, "state": "down" },
@@ -530,16 +486,14 @@ A trace is a timeline of link states, plus app lifecycle events:
 }
 ```
 
-Four states cover the taxonomy:
+Four states cover the whole failure table:
 
-| State | Meaning | Taxonomy row |
-|---|---|---|
-| `up` | packets flow, with optional latency and loss | 2, 5, 6 |
-| `down` | no interface; requests fail instantly | 1 |
-| `blackhole` | looks connected, nothing comes back; requests time out | 4 |
-| `captive` | every request gets an HTML login page with a `200` | 3 |
+- **`up`**: packets flow, with whatever latency and loss you give it (rows 2, 5 and 6)
+- **`down`**: no network at all; requests fail instantly (row 1)
+- **`blackhole`**: looks connected, nothing comes back; requests time out (row 4)
+- **`captive`**: every request gets an HTML login page with a `200` (row 3)
 
-The detail that makes the simulator useful is how it treats loss on an `up` link. Half of the lost exchanges lose the **request**, so the server never sees it. The other half lose the **response**, after the server has done the work:
+The detail that makes the simulator worth anything is how it loses packets on an `up` link. Half of the losses drop the *request*, so the server never sees it. The other half drop the *response*, after the server has already done the work:
 
 ```ts
 // sim/network.ts
@@ -558,82 +512,74 @@ if (roll < loss) {
 }
 ```
 
-Time is simulated (`SimClock`) and randomness is seeded, so 400 runs finish in under a second and every run is reproducible.
+Time is simulated and every random number comes from a seed, so all 400 runs finish in under a second and give you the same numbers every time.
 
-### Four strategies
+### Four scenarios, four approaches
 
-The benchmark replays every trace against four ways of sending the same user actions:
+The repo ships with four scenarios. Each one is modelled on a situation everyone has been in, and each leans on a different row of the table:
 
-| Strategy | What it does |
-|---|---|
-| **Fire and forget** | `fetch()` on tap. If it fails, show an error |
-| **Retry in memory** | the hand-rolled classic: exponential backoff, held in memory, no keys |
-| **Durable queue, no tags** | this article's queue with persistence and jitter, but no idempotency keys and no probe |
-| **Checked luggage** | the full queue: persisted, tagged, batched, probed |
+- **Underground commute (20 minutes):** signal at stations, nothing in the tunnels, weak signal at the platform edges, and one stretch of full bars with no data. The phone goes into a pocket twice, and the second time the OS kills the app.
+- **Office lift (6 minutes):** a 45-second ride in a metal box, then a weak signal as the doors open.
+- **Conference Wi-Fi (15 minutes):** a captive portal for the first four minutes, then a congested network losing 15% of packets.
+- **Out of data (15 minutes):** the SIM hits its cap and nothing gets through for nine minutes, while NetInfo cheerfully reports a connection.
 
-### The traces
+And four ways of sending the same user's orders:
 
-The repo ships four **synthetic** traces. Each is modelled on a common real-world pattern, and each stresses a different row of the taxonomy:
+- **Fire and forget:** `fetch()` on tap; if it fails, show an error.
+- **Retry in memory:** the classic hand-rolled loop, with exponential backoff and no keys.
+- **Durable, no tags:** this article's queue, saved to disk and jittered, but without idempotency keys or the probe.
+- **Checked luggage:** the whole thing.
 
-- **Underground commute (20 min):** stations, tunnels, weak platform edges, one "full bars, no data" stretch. The phone is pocketed twice, and the OS kills the app the second time.
-- **Office lift (6 min):** 45 seconds of black hole, then a weak signal as the doors open.
-- **Conference Wi-Fi (15 min):** a captive portal for four minutes, then a congested network with 15% loss.
-- **SIM over its data cap (15 min):** nine minutes of black hole while NetInfo reports a connection.
-
-<!-- TODO before publishing: record your own traces (or convert a public dataset such as Riiser et al.'s 3G commute traces) and re-run `npm run bench -- path/to/traces`. Replace the synthetic numbers below with recorded ones, or keep both and label them clearly. -->
-
-To run your own:
+Run it yourself:
 
 ```bash
-npm run bench                       # synthetic fixtures
-npm run bench -- ./my-traces        # your own JSON traces
-npm run chart                       # regenerate images/results.svg
+npm run bench     # replays every scenario against every approach, 25 seeds each
+npm run chart     # redraws the chart below from the results
 ```
 
-## Results
+To try your own scenarios, drop JSON files in a folder and run `npm run bench -- ./my-scenarios`.
 
-![Small multiples, one per trace, each with a 100% stacked bar per strategy showing the share of actions delivered exactly once, duplicated or lost. Checked luggage delivers 100% exactly once on all four traces.](./images/results.svg)
+## What happened
 
-*Synthetic traces, 25 seeded runs per trace and strategy.*
+![Small multiples, one per scenario, each with a 100% stacked bar per approach showing the share of orders delivered exactly once, duplicated or lost. Checked luggage delivers 100% exactly once in all four scenarios.](./images/results.svg)
 
-| Trace | Fire and forget | Retry in memory | Durable, no tags | Checked luggage |
+| Scenario | Fire and forget | Retry in memory | Durable, no tags | Checked luggage |
 |---|---|---|---|---|
 | Underground commute | 64.5% lost | 23.7% lost, 2.5% duplicated | 5.6% duplicated | **100% exactly once** |
 | Conference Wi-Fi | 33.0% lost | 8.3% duplicated | 7.6% duplicated | **100% exactly once** |
 | Office lift | 14.3% lost | 2.1% duplicated | 3.0% duplicated | **100% exactly once** |
-| SIM over data cap | 52.7% lost | 100% exactly once | 100% exactly once | **100% exactly once** |
+| Out of data | 52.7% lost | 100% exactly once | 100% exactly once | **100% exactly once** |
 
-Four things stand out.
+A few things jumped out at me.
 
-**1. Retries without persistence trade one bug for another.** On the commute, retrying in memory cut losses from 64.5% to 23.7%. The remaining losses are almost all the OS kill: everything held in memory went with the process.
+**Retrying in memory swaps one bug for another.** On the commute, it cut losses from 64.5% to 23.7%. Nearly all of what's left is the moment the OS killed the app: everything held in memory died with the process. That's my second bug report, recreated on demand.
 
-**2. Persistence without tags just moves the bug.** The durable queue without keys lost nothing on any trace, but it duplicated 3–8% of orders wherever the network dropped responses. Those are your "charged twice" bug reports.
+**Saving to disk without tags just moves the bug.** The durable queue without keys didn't lose a single order in any scenario, but it duplicated 3–8% of them wherever the network dropped responses. That's my *first* bug report. Seeing both of them reproduced in a simulator was oddly satisfying.
 
-**3. The data-cap trace is the control.** A black hole never delivers anything, so it never loses a response either. With no lost responses there's nothing to duplicate, and every retrying strategy scores 100%. Duplicates come from *partial* failure, not from being offline.
+**Being offline doesn't cause duplicates; being *half* online does.** Look at the "out of data" row. A black hole never delivers anything, so it never loses a response, so there's nothing to duplicate, and every approach that retries scores 100%. Duplicates come from the network that *mostly* works.
 
-**4. The probe pays for itself on long outages.** On the commute, the full queue's median delivery time was 52.2 s, against 70.2 s for the durable queue without a probe. Without the probe, every failed send during the tunnels increased the item's backoff, so items were still waiting long after the train reached a station. The cost shows up on the data-cap trace: there, the probe's extra round trip made the full queue's median 29.9 s, against 25.7 s for the queue without one.
+**The probe pays for itself on long outages, and costs a little on short ones.** On the commute, the full queue's median delivery time was 52.2 seconds, against 70.2 for the durable queue without a probe. Without the probe, every failed send during the tunnels pushed the request's backoff higher, so requests were still waiting long after the train reached a station. The out-of-data scenario shows the other side: there, the extra round trip made the full queue a little slower, 29.9 seconds against 25.7.
 
-> **Caveat:** these are synthetic traces. They model real patterns, but they aren't recordings. The simulator also makes simplifications: requests in a batch are sequential, and a segment change mid-request is ignored. Treat the numbers as a comparison between strategies under identical conditions, not as predictions for your users. The harness takes recorded traces unchanged, so if you can record your users' networks, do.
+One honest note on all of this: these are simulated networks, built to model situations we all recognise, not recordings from real phones. The simulator also simplifies a couple of things (requests in a batch go one after another, and a network change halfway through a request is ignored). So read the numbers as a fair fight between four approaches under identical conditions, not as a forecast for your users. If you can record your own users' networks, the harness will take them as they are, and I'd love to see the results.
 
-## Trade-offs and what this doesn't solve
+## What this doesn't solve
 
-- **Ordering.** Items are sent in queue order, but a retried item can land after a newer one. If order matters (a "create" followed by an "update"), either send dependent writes as one request or have the server reject out-of-order updates with a version number.
-- **Conflicts.** This queue makes sure a write *arrives* exactly once. It doesn't decide what happens when two devices edit the same record offline. That's the territory of last-writer-wins, version vectors and CRDTs.
-- **Storage limits and privacy.** Queued requests can contain personal data, and they sit on the device until delivered. Encrypt the storage if they're sensitive, cap the queue's size, and decide what to do when the cap is reached.
-- **Key retention.** The server must remember keys at least as long as a client might retry. With a 60 s backoff cap and a phone that can sit in a drawer for a week, that's longer than you think. Seven days is a common choice.
-- **Batch size.** Twenty items keeps each request small enough to finish on a weak link. On a reliable network, bigger batches are cheaper. Measure on yours.
+- **Ordering.** Requests go out in queue order, but a retried request can land after a newer one. If order matters, like a "create" followed by an "update", send them as one request or have the server reject updates that arrive out of order, using a version number.
+- **Conflicts.** This queue makes sure a write *arrives* exactly once. It has no opinion on what happens when two phones edit the same record offline. That's last-writer-wins, version vectors and CRDTs territory, and a different article.
+- **Privacy.** Queued requests can contain personal data, and they sit on the device until they're delivered. Encrypt the storage if they're sensitive, cap the queue's size, and decide what happens when it fills up.
+- **How long to keep keys.** The server has to remember a key for as long as a client might retry it. With a phone that can sit in a drawer for a week, that's longer than you'd think. Seven days is a common choice.
 
-## Conclusion
+## Wrapping up
 
-Every write from a phone needs four guarantees: it's on disk before the user is told it's saved, it carries a tag the server checks, the app finds out whether the server is really reachable before spending retries, and the retry schedule is stored rather than held in a timer. Get those right and both of the bug reports from the start of this article go away.
+If I could go back and tell weekend-me one thing, it would be this: every write from a phone needs four guarantees. It's on disk before the user is told it's saved. It carries a tag the server checks. The app finds out whether your server is really there before spending a retry. And its schedule is saved on disk rather than held in a timer. Get those four right and both of my bug reports go away.
 
-The library, the server, the simulator and the traces are all in the [companion repo](./code). The most useful contribution you could make is a recorded trace from a network that breaks your app.
+The library, the demo server, the simulator and the scenarios are all in [the repo](https://github.com/Ernesto-tha-great/checked-luggage). If you break it, tell me how. That's the fun part.
 
 ## Further reading
 
-- Marc Brooker, ["Exponential Backoff And Jitter"](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/), AWS Architecture Blog, 2015
-- Brandur Leach, ["Implementing Stripe-like Idempotency Keys in Postgres"](https://brandur.org/idempotency-keys), 2017
+- Marc Brooker, ["Exponential Backoff And Jitter"](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/), AWS Architecture Blog (2015)
+- Brandur Leach, ["Implementing Stripe-like Idempotency Keys in Postgres"](https://brandur.org/idempotency-keys) (2017)
 - IETF HTTPAPI working group, [The Idempotency-Key HTTP Header Field](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/) (Internet-Draft)
-- Riiser, Vigmostad, Griwodz and Halvorsen, "Commute Path Bandwidth Traces from 3G Networks: Analysis and Applications", ACM MMSys 2013. These are public, recorded commute traces you can convert for the harness.
-- Netravali et al., "Mahimahi: Accurate Record-and-Replay for HTTP", USENIX ATC 2015. Use it to replay traces against a real device or emulator, not just the simulator.
+- Riiser, Vigmostad, Griwodz and Halvorsen, "Commute Path Bandwidth Traces from 3G Networks: Analysis and Applications", ACM MMSys 2013: public recordings of real commutes, if you want to feed the simulator something real
+- Netravali et al., "Mahimahi: Accurate Record-and-Replay for HTTP", USENIX ATC 2015, for replaying network conditions against a real device instead of a simulator
 - [`@react-native-community/netinfo`](https://github.com/react-native-netinfo/react-native-netinfo): read what `isConnected` and `isInternetReachable` actually promise

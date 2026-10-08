@@ -18,7 +18,7 @@ interface Row {
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const rows = JSON.parse(readFileSync(join(root, 'results/results.json'), 'utf8')) as Row[];
-const out = process.argv[2] ?? join(root, '../images/results.svg');
+const out = process.argv[2] ?? join(root, 'docs/images/results.svg');
 
 const TITLES: Record<string, string> = {
   'underground-commute': 'Underground commute (20 min)',

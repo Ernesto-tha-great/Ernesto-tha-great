@@ -1,10 +1,10 @@
 # Technical articles
 
-Ten tutorials on one theme: reliable software built on unreliable parts. Each folder holds the article (`article.md`), its diagrams (`images/`) and a self-contained companion project (`code/`) that can be split into its own GitHub repo.
+Ten tutorials on one theme: reliable software built on unreliable parts. Each folder holds the article (`article.md`), its diagrams (`images/`) and the companion project (`code/`). Each `code/` folder is laid out as its own repo and gets pushed to a separate GitHub repository.
 
 | # | Article | Status |
 |---|---|---|
-| 1 | [Offline-First React Native: A Failure Taxonomy From Real Network Traces](./01-offline-first-react-native/article.md) | Draft complete: code, tests, benchmark, diagrams |
+| 1 | [Offline-First React Native: Building a Write Queue That Survives Bad Networks](./01-offline-first-react-native/article.md) | Draft complete. Repo: `checked-luggage` (waiting for you to create it) |
 | 2 | Migrating a GraphQL Schema Without Breaking Legacy Mobile Clients | Not started |
 | 3 | Time to Second Success: Measuring Developer Retention on API Platforms | Not started |
 | 4 | The Mobile Data Cost of JavaScript: Pricing 50 Web Apps in 50 Countries | Not started |

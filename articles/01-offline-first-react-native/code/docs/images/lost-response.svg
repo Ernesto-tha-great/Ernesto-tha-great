@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" width="1200" height="520" role="img" aria-labelledby="t d">
+<title id="t">A lost response, with and without an idempotency key</title>
+<desc id="d">Without a key, the server creates the order twice when the phone retries after a lost response. With a key, the server recognises the retry and returns the stored result without creating a second order.</desc>
+<style>
+  svg { --surface:#fcfcfb; --panel:#f3f2ee; --line:#c9c8c2; --ink:#0b0b0b; --ink-2:#52514e; --accent:#2a78d6; --good:#0a7d0a; --bad:#c03434; --good-bg:#e3f4e3; --bad-bg:#fbe5e5; }
+  @media (prefers-color-scheme: dark) { svg { --surface:#1a1a19; --panel:#232321; --line:#4a4a46; --ink:#ffffff; --ink-2:#c3c2b7; --accent:#5598e7; --good:#3fbf3f; --bad:#e66767; --good-bg:#1e3a1e; --bad-bg:#3d2020; } }
+  text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+  .h1 { font-size: 22px; font-weight: 700; }
+  .h2 { font-size: 16px; font-weight: 700; }
+  .actor { font-size: 14px; font-weight: 650; }
+  .msg { font-size: 12.5px; fill: var(--ink-2); }
+  .code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; fill: var(--ink); }
+  .life { stroke: var(--line); stroke-width: 2; stroke-dasharray: 4 5; }
+  .send { stroke: var(--accent); stroke-width: 2; fill: none; marker-end: url(#a); }
+  .lost { stroke: var(--bad); stroke-width: 2; fill: none; stroke-dasharray: 6 5; }
+  .ok { stroke: var(--good); stroke-width: 2; fill: none; marker-end: url(#g); }
+</style>
+<defs>
+  <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker>
+  <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--good)"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="var(--surface)"/>
+<text class="h1" x="40" y="48">The response that never arrived</text>
+
+<!-- Panel 1: no tag -->
+<rect x="30" y="72" width="555" height="420" rx="12" fill="var(--panel)"/>
+<text class="h2" x="52" y="102">Without a tag</text>
+<text class="actor" x="100" y="138">Phone</text>
+<text class="actor" x="460" y="138">Server</text>
+<line class="life" x1="122" y1="148" x2="122" y2="420"/>
+<line class="life" x1="482" y1="148" x2="482" y2="420"/>
+
+<path class="send" d="M122 175 H478"/>
+<text class="code" x="140" y="168">POST /orders  {sku: "A"}</text>
+<rect x="350" y="186" width="215" height="28" rx="6" fill="var(--good-bg)"/>
+<text class="msg" x="362" y="205">Order #1 created</text>
+<path class="lost" d="M482 240 H300"/>
+<text class="msg" x="272" y="232" text-anchor="end">200 OK, lost</text>
+<text x="282" y="247" font-size="20" font-weight="700" style="fill:var(--bad)">✕</text>
+<text class="msg" x="140" y="282">15 s timeout → retry</text>
+<path class="send" d="M122 315 H478"/>
+<text class="code" x="140" y="308">POST /orders  {sku: "A"}</text>
+<rect x="350" y="326" width="215" height="28" rx="6" fill="var(--bad-bg)"/>
+<text class="msg" x="362" y="345" style="fill:var(--bad)" font-weight="600">Order #2 created (duplicate)</text>
+<path class="ok" d="M482 380 H126"/>
+<text class="msg" x="300" y="372">200 OK</text>
+<text class="h2" x="52" y="462" style="fill:var(--bad)">Result: the customer is charged twice.</text>
+
+<!-- Panel 2: tag -->
+<rect x="615" y="72" width="555" height="420" rx="12" fill="var(--panel)"/>
+<text class="h2" x="637" y="102">With a tag</text>
+<text class="actor" x="685" y="138">Phone</text>
+<text class="actor" x="1045" y="138">Server</text>
+<line class="life" x1="707" y1="148" x2="707" y2="420"/>
+<line class="life" x1="1067" y1="148" x2="1067" y2="420"/>
+
+<path class="send" d="M707 175 H1063"/>
+<text class="code" x="725" y="168">POST /batch  id: 7f3a…  {sku: "A"}</text>
+<rect x="905" y="186" width="250" height="28" rx="6" fill="var(--good-bg)"/>
+<text class="msg" x="917" y="205">Order #1 created, tag 7f3a stored</text>
+<path class="lost" d="M1067 240 H885"/>
+<text class="msg" x="857" y="232" text-anchor="end">200 OK, lost</text>
+<text x="867" y="247" font-size="20" font-weight="700" style="fill:var(--bad)">✕</text>
+<text class="msg" x="725" y="282">tunnel ends → retry, same tag</text>
+<path class="send" d="M707 315 H1063"/>
+<text class="code" x="725" y="308">POST /batch  id: 7f3a…  {sku: "A"}</text>
+<rect x="905" y="326" width="250" height="28" rx="6" fill="var(--good-bg)"/>
+<text class="msg" x="917" y="345" style="fill:var(--good)" font-weight="600">Tag 7f3a seen: no new order</text>
+<path class="ok" d="M1067 380 H711"/>
+<text class="msg" x="820" y="372">delivered (the stored verdict)</text>
+<text class="h2" x="637" y="462" style="fill:var(--good)">Result: exactly one order.</text>
+</svg>

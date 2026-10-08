@@ -10,7 +10,7 @@ Ernest Nnamdi · Developer Relations Engineer · v5 · October 2026
 
 # Part 1: Core engineering (1–5)
 
-## 1. Offline-First React Native: A Failure Taxonomy From Real Network Traces
+## 1. Offline-First React Native: Building a Write Queue That Survives Bad Networks
 
 **Subtitle:** Treat every request like checked luggage: tag it, queue it, and make sure it never arrives twice.
 
