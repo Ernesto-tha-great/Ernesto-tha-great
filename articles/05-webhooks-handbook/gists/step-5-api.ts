@@ -32,14 +32,6 @@ export function createSenderApi(db: SenderDb, options: { allowHttpEndpoints?: bo
         return send(res, 200, { secret: db.rotateSecret(rotateMatch[1]!) });
       }
 
-      if (req.method === 'GET' && url.pathname === '/events') {
-        // The reconciliation feed: every event, in order, from a cursor.
-        const after = Number(url.searchParams.get('after') ?? 0);
-        const limit = Math.min(Number(url.searchParams.get('limit') ?? 100), 500);
-        const events = db.eventsAfter(after, limit).map((e) => ({ seq: e.seq, id: e.id, payload: JSON.parse(e.payload) }));
-        return send(res, 200, { events, next: events.at(-1)?.seq ?? after });
-      }
-
       return send(res, 404, { error: 'not_found' });
     } catch (err) {
       if (err instanceof UnsafeUrlError) return send(res, 422, { error: 'unsafe_url', message: err.message });

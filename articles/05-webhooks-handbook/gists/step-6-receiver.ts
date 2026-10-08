@@ -103,24 +103,6 @@ export function createReceiver(options: ReceiverOptions) {
   return { server, stats };
 }
 
-/**
- * Catch up on anything the webhooks didn't deliver: page through the sender's
- * events feed from where we last stopped.
- */
-export async function reconcile(db: ReceiverDb, senderUrl: string): Promise<number> {
-  let recovered = 0;
-  for (;;) {
-    const res = await fetch(`${senderUrl}/events?after=${db.cursor('events')}&limit=200`);
-    if (!res.ok) throw new Error(`events feed returned ${res.status}`);
-    const page = (await res.json()) as { events: Array<{ seq: number; id: string; payload: unknown }>; next: number };
-    for (const event of page.events) {
-      if (db.store(event.id, JSON.stringify(event.payload), 'reconcile')) recovered++;
-    }
-    if (page.events.length === 0) return recovered;
-    db.setCursor('events', page.next);
-  }
-}
-
 function verifiesWithAny(secrets: string[], raw: Buffer, headers: IncomingMessage['headers']): boolean {
   for (const secret of secrets) {
     try {

@@ -88,7 +88,7 @@ The piece names the heaviest apps and shows the three fixes that saved the most 
 
 ---
 
-## 5. The Webhooks Handbook: Reliable Delivery With Node.js and TypeScript
+## 5. Building Reliable Webhooks With Node.js and TypeScript
 
 **Subtitle:** Signing, retrying and apologising for HTTP calls you send to servers you've never met.
 

@@ -31,8 +31,8 @@
     "file": "step-6-queue-methods.ts",
     "gist": null,
     "url": null,
-    "name": "queue.ts (Step 6: sending)",
-    "description": "queue.ts (Step 6: sending) from \"Offline-First in Practice: Building a Write Queue for React Native With TypeScript\" by Ernest Nnamdi"
+    "name": "queue.ts",
+    "description": "queue.ts (step 6) from \"Offline-First in Practice: Building a Write Queue for React Native With TypeScript\" by Ernest Nnamdi"
   },
   {
     "file": "useOfflineQueue.ts",

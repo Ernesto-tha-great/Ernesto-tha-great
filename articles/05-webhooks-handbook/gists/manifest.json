@@ -1,0 +1,58 @@
+[
+  {
+    "file": "chaos.ts",
+    "gist": null,
+    "url": null,
+    "name": "chaos.ts",
+    "description": "chaos.ts from \"Building Reliable Webhooks With Node.js and TypeScript\" by Ernest Nnamdi"
+  },
+  {
+    "file": "check-urls.ts",
+    "gist": null,
+    "url": null,
+    "name": "check-urls.ts",
+    "description": "check-urls.ts from \"Building Reliable Webhooks With Node.js and TypeScript\" by Ernest Nnamdi"
+  },
+  {
+    "file": "db.ts",
+    "gist": null,
+    "url": null,
+    "name": "db.ts",
+    "description": "db.ts from \"Building Reliable Webhooks With Node.js and TypeScript\" by Ernest Nnamdi"
+  },
+  {
+    "file": "dispatcher.ts",
+    "gist": null,
+    "url": null,
+    "name": "dispatcher.ts",
+    "description": "dispatcher.ts from \"Building Reliable Webhooks With Node.js and TypeScript\" by Ernest Nnamdi"
+  },
+  {
+    "file": "signing.ts",
+    "gist": null,
+    "url": null,
+    "name": "signing.ts",
+    "description": "signing.ts from \"Building Reliable Webhooks With Node.js and TypeScript\" by Ernest Nnamdi"
+  },
+  {
+    "file": "ssrf.ts",
+    "gist": null,
+    "url": null,
+    "name": "ssrf.ts",
+    "description": "ssrf.ts from \"Building Reliable Webhooks With Node.js and TypeScript\" by Ernest Nnamdi"
+  },
+  {
+    "file": "step-5-api.ts",
+    "gist": null,
+    "url": null,
+    "name": "api.ts",
+    "description": "api.ts from \"Building Reliable Webhooks With Node.js and TypeScript\" by Ernest Nnamdi"
+  },
+  {
+    "file": "step-6-receiver.ts",
+    "gist": null,
+    "url": null,
+    "name": "receiver.ts",
+    "description": "receiver.ts from \"Building Reliable Webhooks With Node.js and TypeScript\" by Ernest Nnamdi"
+  }
+]
