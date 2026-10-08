@@ -1,0 +1,44 @@
+[
+  {
+    "file": "chaos.ts",
+    "gist": null,
+    "url": null,
+    "name": "chaos.ts",
+    "description": "chaos.ts from \"Offline-First in Practice: Building a Write Queue for React Native With TypeScript\" by Ernest Nnamdi"
+  },
+  {
+    "file": "queue.ts",
+    "gist": null,
+    "url": null,
+    "name": "queue.ts",
+    "description": "queue.ts from \"Offline-First in Practice: Building a Write Queue for React Native With TypeScript\" by Ernest Nnamdi"
+  },
+  {
+    "file": "step-2-server-app.ts",
+    "gist": null,
+    "url": null,
+    "name": "app.ts",
+    "description": "app.ts from \"Offline-First in Practice: Building a Write Queue for React Native With TypeScript\" by Ernest Nnamdi"
+  },
+  {
+    "file": "step-5-queue.ts",
+    "gist": null,
+    "url": null,
+    "name": "queue.ts",
+    "description": "queue.ts from \"Offline-First in Practice: Building a Write Queue for React Native With TypeScript\" by Ernest Nnamdi"
+  },
+  {
+    "file": "step-6-queue-methods.ts",
+    "gist": null,
+    "url": null,
+    "name": "queue.ts (Step 6: sending)",
+    "description": "queue.ts (Step 6: sending) from \"Offline-First in Practice: Building a Write Queue for React Native With TypeScript\" by Ernest Nnamdi"
+  },
+  {
+    "file": "useOfflineQueue.ts",
+    "gist": null,
+    "url": null,
+    "name": "useOfflineQueue.ts",
+    "description": "useOfflineQueue.ts from \"Offline-First in Practice: Building a Write Queue for React Native With TypeScript\" by Ernest Nnamdi"
+  }
+]

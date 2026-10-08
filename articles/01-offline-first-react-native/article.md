@@ -129,7 +129,7 @@ We're using `"moduleResolution": "Bundler"` so our imports don't need `.js` exte
 
 ## Step 2: Building a Server That Hangs Up on You
 
-To test a queue, we need a server that misbehaves the same way a bad connection does. Create a folder called server, and in it, a file called app.ts. Paste in the code below.
+To test a queue, we need a server that misbehaves the same way a bad connection does. Create a folder called server, and in it, a file called app.ts. Copy the code from [this gist](https://github.com/Ernesto-tha-great/Ernesto-tha-great/blob/main/articles/01-offline-first-react-native/gists/step-2-server-app.ts) and paste it in. Here it is, so you can follow along:
 
 ```ts
 import { createServer, type IncomingMessage } from 'node:http';
@@ -436,7 +436,7 @@ No more duplicates. But stop the server and run it again, and you'll get the sam
 
 The first rule of our queue is simple: a request goes to disk *before* we tell the user it's saved. If the app is killed a second later, the request is still there when it opens again.
 
-Create a folder called src, and in it, a file called queue.ts. Paste in the code below.
+Create a folder called src, and in it, a file called queue.ts. Copy the code from [this gist](https://github.com/Ernesto-tha-great/Ernesto-tha-great/blob/main/articles/01-offline-first-react-native/gists/step-5-queue.ts) and paste it in. Here it is:
 
 ```ts
 export interface QueuedRequest {
@@ -637,7 +637,7 @@ In the class, add a `flushing` field below `saving`:
   private flushing: Promise<void> | null = null;
 ```
 
-Then add these methods to the class, right below `pending()`:
+Then copy these methods from [this gist](https://github.com/Ernesto-tha-great/Ernesto-tha-great/blob/main/articles/01-offline-first-react-native/gists/step-6-queue-methods.ts) and paste them into the class, right below `pending()`:
 
 ```ts
   /** Sends everything that's due. Two callers at once share one flush. */
@@ -959,298 +959,24 @@ npm run orders -- 0
 
 Zero attempts, and no errors on the orders themselves. The second run didn't even try, because nothing was due yet. Start the server again, wait a second, and run `npm run orders -- 0`. You'll get `0 in the queue` (if a reply gets dropped on the way back, there'll be one left; run it once more), and the server will have exactly three orders.
 
-Your project should look exactly like mine if you've followed the above steps. Here's the complete src/queue.ts, in case anything went missing along the way:
-
-```ts
-import { backoff } from './backoff';
-
-export interface QueuedRequest {
-  /** A unique ID for this request. Sent as the Idempotency-Key header on every attempt. */
-  id: string;
-  path: string;
-  body: unknown;
-  attempts: number;
-  /** Saved with the item, so a retry schedule survives the app being killed. */
-  nextAttemptAt: number;
-  lastError?: string;
-}
-
-/** Where the queue keeps its requests between launches. */
-export interface Storage {
-  load(): Promise<QueuedRequest[]>;
-  save(items: QueuedRequest[]): Promise<void>;
-}
-
-export interface QueueOptions {
-  baseUrl: string;
-  storage: Storage;
-  /** Makes the unique ID. On React Native, pass expo-crypto's randomUUID. */
-  createId?: () => string;
-  /** Asks your server if it's reachable before a flush. */
-  probe?: () => Promise<boolean>;
-  timeoutMs?: number;
-  baseDelayMs?: number;
-  maxDelayMs?: number;
-  onDeadLetter?: (item: QueuedRequest, reason: string) => void;
-}
-
-type Result = { outcome: 'delivered' } | { outcome: 'rejected' | 'retry'; reason: string };
-
-export class OfflineQueue {
-  private items: QueuedRequest[] = [];
-  private loading: Promise<void> | null = null;
-  private saving: Promise<void> = Promise.resolve();
-  private flushing: Promise<void> | null = null;
-  private probeFailures = 0;
-
-  constructor(private readonly options: QueueOptions) {}
-
-  /** Resolves once the request is on disk, so it's safe to tell the user "Saved". */
-  async enqueue(path: string, body: unknown): Promise<QueuedRequest> {
-    await this.load();
-    const item: QueuedRequest = {
-      id: this.options.createId?.() ?? crypto.randomUUID(),
-      path,
-      body,
-      attempts: 0,
-      nextAttemptAt: Date.now(),
-    };
-    this.items.push(item);
-    await this.save();
-    return item;
-  }
-
-  async pending(): Promise<number> {
-    await this.load();
-    return this.items.length;
-  }
-
-  /** When the next item is due, so the app knows when to try again. */
-  nextWakeAt(): number | null {
-    if (this.items.length === 0) return null;
-    return Math.min(...this.items.map((item) => item.nextAttemptAt));
-  }
-
-  /** Sends everything that's due. Two callers at once share one flush. */
-  flush(): Promise<void> {
-    this.flushing ??= this.sendDue().finally(() => {
-      this.flushing = null;
-    });
-    return this.flushing;
-  }
-
-  private async sendDue(): Promise<void> {
-    await this.load();
-    const due = this.items.filter((item) => item.nextAttemptAt <= Date.now());
-    if (due.length === 0) return;
-
-    if (this.options.probe && !(await this.options.probe())) {
-      // The server isn't reachable. That's not any item's fault, so no item
-      // loses an attempt. We just wait longer before checking again.
-      this.probeFailures++;
-      const wait = Math.max(this.baseDelay, backoff(this.probeFailures, this.baseDelay, this.maxDelay));
-      for (const item of due) item.nextAttemptAt = Date.now() + wait;
-      await this.save();
-      return;
-    }
-    this.probeFailures = 0;
-
-    for (const item of due) {
-      const result = await this.send(item);
-
-      if (result.outcome === 'delivered') {
-        this.remove(item);
-      } else if (result.outcome === 'rejected') {
-        // The server read it and said no. Retrying won't change its mind.
-        this.remove(item);
-        this.options.onDeadLetter?.(item, result.reason);
-      } else {
-        item.attempts++;
-        item.lastError = result.reason;
-        item.nextAttemptAt = Date.now() + backoff(item.attempts, this.baseDelay, this.maxDelay);
-      }
-      await this.save();
-
-      // If the network just failed us, don't fire the rest of the queue into it.
-      if (result.outcome === 'retry') break;
-    }
-  }
-
-  private async send(item: QueuedRequest): Promise<Result> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.options.timeoutMs ?? 10_000);
-    try {
-      const res = await fetch(`${this.options.baseUrl}${item.path}`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'idempotency-key': item.id },
-        body: JSON.stringify(item.body),
-        signal: controller.signal,
-      });
-      if (res.ok) return { outcome: 'delivered' };
-      if (res.status === 408 || res.status === 429 || res.status >= 500) {
-        return { outcome: 'retry', reason: `HTTP ${res.status}` };
-      }
-      return { outcome: 'rejected', reason: `HTTP ${res.status}: ${await res.text()}` };
-    } catch (err) {
-      return { outcome: 'retry', reason: err instanceof Error ? err.message : String(err) };
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
-  private remove(item: QueuedRequest): void {
-    this.items = this.items.filter((other) => other.id !== item.id);
-  }
-
-  /** Saves run one after another, so a double tap can't make two writes trip over each other. */
-  private save(): Promise<void> {
-    const items = this.items;
-    this.saving = this.saving.catch(() => {}).then(() => this.options.storage.save(items));
-    return this.saving;
-  }
-
-  private load(): Promise<void> {
-    this.loading ??= this.options.storage.load().then((saved) => {
-      this.items = [...saved, ...this.items];
-    });
-    return this.loading;
-  }
-
-  private get baseDelay() {
-    return this.options.baseDelayMs ?? 1_000;
-  }
-
-  private get maxDelay() {
-    return this.options.maxDelayMs ?? 60_000;
-  }
-}
-```
+Your project should look exactly like mine if you've followed the above steps. The complete src/queue.ts is in [this gist](https://github.com/Ernesto-tha-great/Ernesto-tha-great/blob/main/articles/01-offline-first-react-native/gists/queue.ts), so you can compare it with yours in case anything went missing along the way.
 
 ## Testing Our Queue
 
 Stopping and starting a server by hand only tells us so much. So let's give the queue a properly bad afternoon, and see how it compares with the two scripts from Steps 3 and 4.
 
-Create scripts/chaos.ts and paste in the code below.
+This script is a long one, so I've put it in [a gist](https://github.com/Ernesto-tha-great/Ernesto-tha-great/blob/main/articles/01-offline-first-react-native/gists/chaos.ts). Create scripts/chaos.ts and paste in the code from there.
+
+Here's what the script does:
+
+- It starts its own copy of the server on a random port, with a 25% chance of hanging up after saving each order. The random numbers are seeded, so every run drops the same requests.
+- It places 100 orders, one every 40 milliseconds. Between orders 40 and 90, the server goes down completely, which works out to about two seconds.
+- Every 25 orders, a moment after the user saw "Saved", the "app" is killed. For the first two approaches, any retry still running in memory dies with it. For the queue, a new `OfflineQueue` takes over, and it only knows what's on disk. The old one can't write to disk any more, and its next flush goes nowhere, just like a dead app.
+- At the end, the queue gets a chance to finish sending, like an app being opened again later. Then we count what the server ended up with.
+
+The interesting part is how the queue's restarts work:
 
 ```ts
-// One bad afternoon, three ways of sending orders through it.
-//
-// 100 orders, one every 40 ms. The server hangs up on 25% of them after saving,
-// goes down completely for 2 seconds in the middle, and the "app" is killed
-// every 25 orders. Then we count what the server ended up with.
-import { rm } from 'node:fs/promises';
-import type { AddressInfo } from 'node:net';
-import { createOrdersServer } from '../server/app';
-import { createProbe } from '../src/probe';
-import { OfflineQueue } from '../src/queue';
-import { fileStorage } from '../src/storage';
-
-const ORDERS = 100;
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-/** A seeded random, so every run drops the same requests. */
-function seeded(seed: number) {
-  return () => {
-    seed = (seed * 1664525 + 1013904223) % 2 ** 32;
-    return seed / 2 ** 32;
-  };
-}
-
-interface Approach {
-  name: string;
-  /** The user taps "Save". */
-  tap(sku: string): void;
-  /** The OS kills the app. Anything only in memory is gone. */
-  kill(): void;
-  /** The app is opened again later and gets a chance to finish. */
-  finish(): Promise<void>;
-}
-
-async function run(makeApproach: (api: string) => Approach) {
-  const { server, orders, setDown } = createOrdersServer({ dropRate: 0.25, random: seeded(42) });
-  await new Promise<void>((resolve) => server.listen(0, resolve));
-  const api = `http://localhost:${(server.address() as AddressInfo).port}`;
-  const approach = makeApproach(api);
-
-  for (let i = 1; i <= ORDERS; i++) {
-    if (i === 40) setDown(true); // the outage starts...
-    if (i === 90) setDown(false); // ...and ends 2 seconds later
-    approach.tap(`SKU-${i}`);
-    await sleep(40);
-    if (i % 25 === 0) approach.kill(); // a moment after "Saved", the OS kills the app
-  }
-  await approach.finish();
-
-  server.closeAllConnections();
-  server.close();
-
-  const counts = new Map<string, number>();
-  for (const order of orders) counts.set(order.sku, (counts.get(order.sku) ?? 0) + 1);
-  const lost = ORDERS - counts.size;
-  const duplicated = [...counts.values()].filter((n) => n > 1).length;
-  return { name: approach.name, lost, duplicated, exactlyOnce: ORDERS - lost - duplicated };
-}
-
-// 1. What most apps do: fetch, retry three times, give up.
-const naive = (api: string): Approach => {
-  let generation = 0;
-  return {
-    name: 'fetch + 3 retries',
-    tap(sku) {
-      const born = generation;
-      void (async () => {
-        for (let attempt = 0; attempt < 3 && born === generation; attempt++) {
-          try {
-            const res = await fetch(`${api}/orders`, {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ sku, qty: 1 }),
-            });
-            if (res.ok) return;
-          } catch {}
-        }
-      })();
-    },
-    kill() {
-      generation++; // every retry loop that's still running dies with the app
-    },
-    async finish() {
-      await sleep(1_000);
-    },
-  };
-};
-
-// 2. Same retries, plus an idempotency key. Still only in memory.
-const tagged = (api: string): Approach => {
-  let generation = 0;
-  return {
-    name: 'retries + idempotency key',
-    tap(sku) {
-      const born = generation;
-      const key = crypto.randomUUID();
-      void (async () => {
-        for (let attempt = 0; attempt < 3 && born === generation; attempt++) {
-          try {
-            const res = await fetch(`${api}/orders`, {
-              method: 'POST',
-              headers: { 'content-type': 'application/json', 'idempotency-key': key },
-              body: JSON.stringify({ sku, qty: 1 }),
-            });
-            if (res.ok) return;
-          } catch {}
-        }
-      })();
-    },
-    kill() {
-      generation++;
-    },
-    async finish() {
-      await sleep(1_000);
-    },
-  };
-};
-
-// 3. The queue: tagged, on disk, backed off, probed.
 const queued = (api: string): Approach => {
   const disk = fileStorage('chaos-queue.json');
   let generation = 0;
@@ -1277,29 +1003,7 @@ const queued = (api: string): Approach => {
     kill() {
       queue = make(); // a fresh launch: it only knows what's on disk
     },
-    async finish() {
-      const deadline = Date.now() + 15_000;
-      while ((await queue.pending()) > 0 && Date.now() < deadline) {
-        await queue.flush();
-        await sleep(100);
-      }
-    },
-  };
-};
-
-await rm('chaos-queue.json', { force: true });
-const results = [await run(naive), await run(tagged), await run(queued)];
-await rm('chaos-queue.json', { force: true });
-
-console.table(results);
 ```
-
-Here's what the script does:
-
-- It starts its own copy of the server on a random port, with a 25% chance of hanging up after saving each order. The random numbers are seeded, so every run drops the same requests.
-- It places 100 orders, one every 40 milliseconds. Between orders 40 and 90, the server goes down completely, which works out to about two seconds.
-- Every 25 orders, a moment after the user saw "Saved", the "app" is killed. For the first two approaches, any retry still running in memory dies with it. For the queue, a new `OfflineQueue` takes over, and it only knows what's on disk. The old one can't write to disk any more, and its next flush goes nowhere, just like a dead app.
-- At the end, the queue gets a chance to finish sending, like an app being opened again later. Then we count what the server ended up with.
 
 Run it. It takes about 16 seconds.
 
@@ -1373,7 +1077,7 @@ Replace `https://your-api.example.com` with your API's address. Your server need
 
 We're passing `randomUUID` from expo-crypto because React Native doesn't have `crypto.randomUUID()` built in.
 
-Next, create lib/useOfflineQueue.ts:
+Next, create lib/useOfflineQueue.ts and paste in the code from [this gist](https://github.com/Ernesto-tha-great/Ernesto-tha-great/blob/main/articles/01-offline-first-react-native/gists/useOfflineQueue.ts):
 
 ```ts
 import NetInfo from '@react-native-community/netinfo';

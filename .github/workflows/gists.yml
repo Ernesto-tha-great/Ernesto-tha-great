@@ -1,0 +1,25 @@
+name: gists
+
+# Turns the long code snippets in each article (articles/*/gists/) into GitHub
+# Gists and links the article to them. Runs only when started by hand.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  gists:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 .github/scripts/gists.py
+        env:
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+      - name: Commit the gist links
+        run: |
+          git config user.name "Ernesto"
+          git config user.email "ernestnamdi66@gmail.com"
+          git add articles
+          git diff --cached --quiet || git commit -m "Link article code to gists"
+          git push
