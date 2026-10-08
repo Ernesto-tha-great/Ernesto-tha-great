@@ -3,10 +3,10 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { checkBudget } from '../src/budget.js';
-import { costUsd, formatDuration, formatUsd, monthlyBytes, workSeconds, BYTES_PER_GB, VISITS_PER_MONTH } from '../src/cost.js';
-import { executedBytes } from '../src/coverage.js';
-import { loadMarket } from '../src/data.js';
+import { checkBudget } from '../src/budget';
+import { costUsd, formatDuration, formatUsd, monthlyBytes, workSeconds, BYTES_PER_GB, VISITS_PER_MONTH } from '../src/cost';
+import { executedBytes } from '../src/coverage';
+import { loadMarket } from '../src/data';
 
 describe('executedBytes', () => {
   it('lets an inner range that never ran override the outer range that did', () => {

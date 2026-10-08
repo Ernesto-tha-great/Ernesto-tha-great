@@ -9,13 +9,15 @@
     "node": ">=22"
   },
   "scripts": {
+    "measure": "tsx scripts/measure.ts",
     "fetch:prices": "tsx scripts/fetch-prices.ts",
     "fetch:income": "tsx scripts/fetch-income.ts",
-    "measure": "tsx scripts/measure.ts",
+    "cost": "tsx scripts/cost.ts",
+    "budget": "tsx scripts/budget.ts",
+    "study": "tsx scripts/study.ts",
     "report": "tsx scripts/report.ts",
     "test": "node --import tsx --test test/*.test.ts",
-    "typecheck": "tsc --noEmit",
-    "budget": "tsx scripts/budget.ts"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "playwright": "1.56"

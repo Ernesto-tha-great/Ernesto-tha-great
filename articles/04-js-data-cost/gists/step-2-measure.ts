@@ -1,5 +1,4 @@
 import { devices, type Browser, type CDPSession } from 'playwright';
-import { summariseCoverage } from './coverage';
 
 export interface LoadStats {
   /** Bytes over the wire, headers included, as Chrome's network stack counted them. */
@@ -17,10 +16,6 @@ export interface PageMeasurement {
   blocked: boolean;
   /** The first visit, with an empty cache. */
   cold: LoadStats | null;
-  /** The repeat visit, with whatever the first visit cached. */
-  warm: LoadStats | null;
-  /** JavaScript on the first visit: bytes on the wire, and characters of source that did and didn't run. */
-  js: { transferred: number; sourceBytes: number; usedBytes: number } | null;
   error?: string;
 }
 
@@ -86,9 +81,9 @@ async function settle(tracker: TransferTracker, quietMs: number, maxMs: number):
 }
 
 /**
- * Loads a page twice, the way someone on a phone would: once with an empty
- * cache, then again with whatever the first visit cached. No scrolling, no
- * clicking "accept": just what arrives before anyone touches the screen.
+ * Loads a page the way someone on a phone would, with an empty cache. No
+ * scrolling, no clicking "accept": just what arrives before anyone touches
+ * the screen.
  */
 export async function measurePage(browser: Browser, url: string, options: MeasureOptions = {}): Promise<PageMeasurement> {
   const timeoutMs = options.timeoutMs ?? 45_000;
@@ -101,27 +96,17 @@ export async function measurePage(browser: Browser, url: string, options: Measur
   await cdp.send('Network.enable');
   const tracker = new TransferTracker(cdp);
 
-  const result: PageMeasurement = { url, finalUrl: null, status: null, title: null, blocked: false, cold: null, warm: null, js: null };
+  const result: PageMeasurement = { url, finalUrl: null, status: null, title: null, blocked: false, cold: null };
 
   try {
-    await page.coverage.startJSCoverage({ resetOnNavigation: false });
     const response = await page.goto(url, { waitUntil: 'load', timeout: timeoutMs });
     await settle(tracker, quietMs, maxSettleMs);
-    const coverage = await page.coverage.stopJSCoverage();
 
     result.status = response?.status() ?? null;
     result.finalUrl = page.url();
     result.title = await page.title();
     result.blocked = (result.status ?? 0) >= 400 || BLOCKED.test(result.title);
     result.cold = tracker.takeStats();
-    result.js = { transferred: result.cold.byType.Script ?? 0, ...summariseCoverage(coverage) };
-
-    // Leave and come back, like a person would.
-    await page.goto('about:blank');
-    tracker.takeStats();
-    await page.goto(url, { waitUntil: 'load', timeout: timeoutMs });
-    await settle(tracker, quietMs, maxSettleMs);
-    result.warm = tracker.takeStats();
   } catch (err) {
     result.error = err instanceof Error ? err.message.split('\n')[0] : String(err);
   } finally {

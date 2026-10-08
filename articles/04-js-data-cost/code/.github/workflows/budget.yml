@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       url:
-        description: Measure this URL instead of the one in budget.example.json
+        description: Measure this URL instead of the one in budget.json
         required: false
 
 jobs:
@@ -22,6 +22,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run budget -- budget.example.json ${URL:+"$URL"}
+      - run: npm run budget -- budget.json ${URL:+"$URL"}
         env:
           URL: ${{ inputs.url }}

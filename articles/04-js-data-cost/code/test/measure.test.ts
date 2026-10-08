@@ -3,7 +3,7 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { after, before, describe, it } from 'node:test';
 import { chromium, type Browser } from 'playwright';
-import { measureSite } from '../src/measure.js';
+import { measurePage } from '../src/measure';
 
 // A page with one stylesheet and one script, most of which never runs.
 const usedCode = 'document.title = "Fixture";\n';
@@ -38,9 +38,9 @@ after(async () => {
   server.close();
 });
 
-describe('measureSite', () => {
+describe('measurePage', () => {
   it('counts what a first visit downloads, and how much less a second visit needs', async () => {
-    const result = await measureSite(browser, { name: 'fixture', url: `${base}/` }, { quietMs: 300 });
+    const result = await measurePage(browser, `${base}/`, { quietMs: 300 });
 
     assert.equal(result.error, undefined);
     assert.equal(result.blocked, false);
@@ -52,13 +52,13 @@ describe('measureSite', () => {
   });
 
   it('measures how much of the JavaScript actually ran', async () => {
-    const result = await measureSite(browser, { name: 'fixture', url: `${base}/` }, { quietMs: 300 });
+    const result = await measurePage(browser, `${base}/`, { quietMs: 300 });
     const unused = 1 - result.js!.usedBytes / result.js!.sourceBytes;
     assert.ok(unused > 0.9, `expected most of the script to be unused, got ${(unused * 100).toFixed(1)}%`);
   });
 
   it('flags error pages and bot walls so they can be left out', async () => {
-    const result = await measureSite(browser, { name: 'blocked', url: `${base}/blocked` }, { quietMs: 300 });
+    const result = await measurePage(browser, `${base}/blocked`, { quietMs: 300 });
     assert.equal(result.blocked, true);
   });
 });

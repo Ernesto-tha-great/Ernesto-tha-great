@@ -4,9 +4,11 @@
  * docs/images.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { costUsd, formatDuration, formatUsd, median, monthlyBytes, workSeconds, WORK_HOURS_PER_YEAR } from '../src/cost.js';
-import { loadMarket } from '../src/data.js';
-import type { SiteMeasurement } from '../src/measure.js';
+import { costUsd, formatDuration, formatUsd, median, monthlyBytes, workSeconds, WORK_HOURS_PER_YEAR } from '../src/cost';
+import { loadMarket } from '../src/data';
+import type { PageMeasurement } from '../src/measure';
+
+type SiteMeasurement = PageMeasurement & { name: string };
 
 const measurements = JSON.parse(readFileSync('results/measurements.json', 'utf8')) as {
   measuredAt: string; device: string; browser: string; where: string; sites: SiteMeasurement[];

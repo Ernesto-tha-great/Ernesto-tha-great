@@ -86,7 +86,7 @@ npm init -y
 npm install --save-dev typescript tsx @types/node
 ```
 
-Open the folder in your code editor. In package.json, set `"type"` to `"module"` (add it if it isn't there) and replace the `scripts` section with this:
+Open the folder in your code editor. In package.json, add `"type": "module"` and replace the `scripts` section, so those two parts look like this (leave the rest of the file, like your dependencies, as it is):
 
 ```json
 {
@@ -119,8 +119,6 @@ The `--no-warnings` flag hides the "SQLite is experimental" warning Node prints 
   "exclude": ["node_modules"]
 }
 ```
-
-Whenever you want to check that everything compiles, run `npm run typecheck`. If it prints nothing, you're good.
 
 ## Step 2: The Tables
 
@@ -206,7 +204,7 @@ export class EventStore {
 }
 ```
 
-It opens (or creates) a SQLite database file, runs schema.sql, and gives us one method for each of the three tables. Run `npm run typecheck` to make sure it compiles.
+It opens (or creates) a SQLite database file, runs schema.sql, and gives us one method for each of the three tables. Run `npm run typecheck` to make sure it compiles. Apart from npm's own two lines at the top, it shouldn't print anything. You can do this after every step.
 
 ## Step 3: Recording Every API Call
 

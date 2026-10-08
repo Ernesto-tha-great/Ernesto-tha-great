@@ -1,6 +1,6 @@
-name: measure
+name: study
 
-# Re-measures every site and refreshes prices and income data, then commits
+# Re-runs the 50-site study and refreshes prices and income data, then commits
 # the results. Runs on the 1st of each month, or on demand from the Actions tab.
 on:
   workflow_dispatch:
@@ -24,12 +24,12 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run fetch:prices
       - run: npm run fetch:income
-      - run: npm run measure
+      - run: npm run study
       - run: npm run report
       - name: Commit results
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "Ernesto"
+          git config user.email "ernestnamdi66@gmail.com"
           git add data results docs/images
           git diff --cached --quiet || git commit -m "Update measurements ($(date -u +%Y-%m-%d))"
           git push
