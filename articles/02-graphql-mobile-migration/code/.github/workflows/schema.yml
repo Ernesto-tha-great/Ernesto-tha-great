@@ -17,5 +17,5 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      # Fails the build if any supported app version's operations no longer validate.
+      # Fails the pull request if any app version we still support would break.
       - run: npm run check-schema

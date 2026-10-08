@@ -1,8 +1,0 @@
-{
-  "client": "android",
-  "version": "2.3",
-  "operations": {
-    "1dbff930321f9596c613577e20aa4c88d988e40bf7871dc542bf44aff91966db": "query OrderHistory($customerId: ID!) {\n  orders(customer_id: $customerId) {\n    id\n    status\n    created_at\n    order_items {\n      qty\n      product_id\n      product {\n        name\n        price_cents\n      }\n    }\n  }\n}\n",
-    "2e194af3db38c8213e0a26a1f3cc940b535e00673e8d77d4bc989ad2c56e01c2": "query Profile($customerId: ID!) {\n  customer(id: $customerId) {\n    id\n    name\n  }\n}\n"
-  }
-}

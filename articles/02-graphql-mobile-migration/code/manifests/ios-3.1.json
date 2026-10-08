@@ -1,8 +1,0 @@
-{
-  "client": "ios",
-  "version": "3.1",
-  "operations": {
-    "2e4591da88fb40be599f2d30cbb31cedb0ba58860b0053e8f81860bad77b799d": "query OrderHistory($first: Int!, $after: String) {\n  viewer {\n    orders(first: $first, after: $after) {\n      edges {\n        node {\n          id\n          status\n          placedAt\n          total {\n            formatted\n          }\n          lineItems {\n            quantity\n            unitPrice {\n              formatted\n            }\n            product {\n              id\n              name\n            }\n          }\n        }\n      }\n      pageInfo {\n        hasNextPage\n        endCursor\n      }\n    }\n  }\n}\n",
-    "b858044f64cc18495788cda19acc44223d0537e5e13056a5b868dff3c9df06a2": "query Profile {\n  viewer {\n    id\n    name\n  }\n}\n"
-  }
-}

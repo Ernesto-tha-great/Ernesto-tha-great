@@ -37,7 +37,7 @@ Where the analogy breaks: a retry doesn't move the bag. It copies it, and only t
 
 ---
 
-## 2. Migrating a GraphQL Schema Without Breaking Legacy Mobile Clients
+## 2. How To Migrate a GraphQL Schema Without Breaking Old Mobile App Versions
 
 **Subtitle:** DataLoader, persisted queries, and the Android build that will never update.
 

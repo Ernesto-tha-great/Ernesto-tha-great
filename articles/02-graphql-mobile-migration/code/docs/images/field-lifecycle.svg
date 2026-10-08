@@ -38,7 +38,7 @@
 <text class="n" x="518" y="118">3</text>
 <text class="t" x="518" y="142">Watch who calls it</text>
 <text class="b" x="518" y="168">Field usage per</text>
-<text class="b" x="518" y="186">client@version, from</text>
+<text class="b" x="518" y="186">app version, from</text>
 <text class="b" x="518" y="204">real traffic.</text>
 <text class="code" x="518" y="234">GET /usage</text>
 
@@ -49,7 +49,7 @@
 <text class="b" x="748" y="186">operation of every</text>
 <text class="b" x="748" y="204">supported build against</text>
 <text class="b" x="748" y="222">the schema without it.</text>
-<text class="code" x="748" y="252">npm run check-removal</text>
+<text class="code" x="748" y="252">npm run check-schema</text>
 
 <rect x="960" y="90" width="200" height="200" rx="12" fill="var(--good-bg)"/>
 <text class="n" x="978" y="118" style="fill:var(--good)">5</text>
@@ -64,5 +64,5 @@
 <path class="arrow" d="M930 190 H956"/>
 
 <text class="b" x="40" y="336">Stages 3 and 4 answer the same question two ways: traffic tells you what is being called,</text>
-<text class="b" x="40" y="356">manifests tell you what could still be called by a build that hasn't phoned home this week.</text>
+<text class="b" x="40" y="356">each build's .graphql files tell you what it could still send, even if it hasn't been opened this week.</text>
 </svg>

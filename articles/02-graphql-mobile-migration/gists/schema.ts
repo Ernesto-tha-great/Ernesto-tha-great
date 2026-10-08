@@ -1,18 +1,12 @@
 import { createGraphQLError, createSchema } from 'graphql-yoga';
-import type { CustomerRow, Db, OrderItemRow, OrderRow, ProductRow } from '../db.js';
-import type { Loaders } from './loaders.js';
+import type { CustomerRow, Db, OrderItemRow, OrderRow, ProductRow } from './db';
+import type { Loaders } from './loaders';
 
-/**
- * The schema the app actually wanted: shaped around screens, not tables.
- * The old fields are still here, marked @deprecated and re-implemented on top
- * of the new resolvers, so app versions that will never update keep working.
- */
 export const typeDefs = /* GraphQL */ `
   type Query {
     viewer: Viewer
     product(id: ID!): Product
 
-    customer(id: ID!): Customer @deprecated(reason: "Use viewer.")
     orders(customer_id: ID!): [Order] @deprecated(reason: "Use viewer.orders.")
   }
 
@@ -38,7 +32,7 @@ export const typeDefs = /* GraphQL */ `
   }
 
   type Money {
-    "In minor units: cents, pence, kobo."
+    "In the smallest unit: cents, pence, kobo."
     amount: Int!
     currency: String!
     formatted: String!
@@ -74,23 +68,15 @@ export const typeDefs = /* GraphQL */ `
 
     price_cents: Int @deprecated(reason: "Use price.")
   }
-
-  type Customer {
-    id: ID!
-    name: String
-    email: String
-  }
 `;
 
-export interface V2Context {
+export interface Context {
   db: Db;
   loaders: Loaders;
   viewerId: string | null;
 }
 
-const MAX_PAGE = 50;
-
-export const schema = createSchema<V2Context>({
+export const schema = createSchema<Context>({
   typeDefs,
   resolvers: {
     Query: {
@@ -98,24 +84,19 @@ export const schema = createSchema<V2Context>({
         viewerId ? db.get<CustomerRow>('SELECT * FROM customers WHERE id = ?', viewerId) : null,
       product: (_, { id }: { id: string }, { loaders }) => loaders.productById.load(id),
 
-      // Legacy: Android 2.x still calls these. Same answers as before, but now
-      // they check who's asking, which v1 never did.
-      customer: (_, { id }: { id: string }, ctx) => {
-        assertViewer(ctx, id);
-        return ctx.db.get<CustomerRow>('SELECT * FROM customers WHERE id = ?', id);
-      },
-      orders: (_, { customer_id }: { customer_id: string }, ctx) => {
-        assertViewer(ctx, customer_id);
-        return ctx.db.all<OrderRow>(
-          'SELECT * FROM orders WHERE customer_id = ? ORDER BY created_at DESC, id DESC',
-          customer_id,
-        );
+      // The old field, still here for app versions that never update. It now
+      // checks who's asking, which the first version never did.
+      orders: (_, { customer_id }: { customer_id: string }, { db, viewerId }) => {
+        if (viewerId !== customer_id) {
+          throw createGraphQLError("You can only see your own orders", { extensions: { code: 'FORBIDDEN' } });
+        }
+        return db.all<OrderRow>('SELECT * FROM orders WHERE customer_id = ? ORDER BY created_at DESC, id DESC', customer_id);
       },
     },
 
     Viewer: {
       orders: async (viewer: CustomerRow, { first, after }: { first: number; after?: string }, { db }) => {
-        const limit = Math.min(Math.max(first, 1), MAX_PAGE);
+        const limit = Math.min(Math.max(first, 1), 100);
         const cursor = after ? decodeCursor(after) : null;
         const rows = cursor
           ? await db.all<OrderRow>(
@@ -128,12 +109,10 @@ export const schema = createSchema<V2Context>({
               viewer.id, limit + 1,
             );
 
+        // We asked for one extra row. If it came back, there's another page.
         const page = rows.slice(0, limit);
         const edges = page.map((order) => ({ cursor: encodeCursor(order), node: order }));
-        return {
-          edges,
-          pageInfo: { hasNextPage: rows.length > limit, endCursor: edges.at(-1)?.cursor ?? null },
-        };
+        return { edges, pageInfo: { hasNextPage: rows.length > limit, endCursor: edges.at(-1)?.cursor ?? null } };
       },
     },
 
@@ -143,25 +122,24 @@ export const schema = createSchema<V2Context>({
       order_items: (order: OrderRow, _, { loaders }) => loaders.itemsByOrderId.load(order.id),
       total: async (order: OrderRow, _, { loaders }) => {
         const items = await loaders.itemsByOrderId.load(order.id);
+        // Ask for every product at once, so they all land in the same batch.
         const products = await loaders.productById.loadMany(items.map((item) => item.product_id));
-        const amount = items.reduce((sum, item, i) => {
+        let amount = 0;
+        items.forEach((item, i) => {
           const product = products[i];
-          return product && !(product instanceof Error) ? sum + item.qty * product.price_cents : sum;
-        }, 0);
+          if (product && !(product instanceof Error)) amount += item.qty * product.price_cents;
+        });
         return money(amount);
       },
     },
 
     OrderItem: {
       quantity: (item: OrderItemRow) => item.qty,
+      unitPrice: async (item: OrderItemRow, _, { loaders }) => money((await loaders.productById.load(item.product_id))?.price_cents ?? 0),
       product: async (item: OrderItemRow, _, { loaders }) => {
         const product = await loaders.productById.load(item.product_id);
         if (!product) throw createGraphQLError(`Product ${item.product_id} not found`);
         return product;
-      },
-      unitPrice: async (item: OrderItemRow, _, { loaders }) => {
-        const product = await loaders.productById.load(item.product_id);
-        return money(product?.price_cents ?? 0);
       },
     },
 
@@ -170,14 +148,6 @@ export const schema = createSchema<V2Context>({
     },
   },
 });
-
-function assertViewer(ctx: V2Context, customerId: string): void {
-  if (ctx.viewerId !== customerId) {
-    throw createGraphQLError('Not allowed to read another customer’s data', {
-      extensions: { code: 'FORBIDDEN' },
-    });
-  }
-}
 
 const formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 

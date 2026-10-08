@@ -1,22 +1,17 @@
 {
-  "name": "graphql-mobile-migration",
-  "version": "0.1.0",
+  "name": "graphql-migration",
+  "version": "1.0.0",
   "private": true,
-  "description": "Migrating a table-shaped GraphQL schema to a client-shaped one without breaking app versions that never update.",
   "type": "module",
-  "license": "MIT",
   "engines": {
     "node": ">=22.13"
   },
   "scripts": {
     "dev": "node --no-warnings --import tsx src/main.ts",
-    "manifest": "node --no-warnings --import tsx scripts/manifest.ts",
-    "check-removal": "node --no-warnings --import tsx scripts/check-removal.ts",
-    "measure": "node --no-warnings --import tsx scripts/measure.ts",
-    "chart": "node --no-warnings --import tsx scripts/chart.ts",
+    "count": "node --no-warnings --import tsx scripts/count.ts",
+    "check-schema": "node --no-warnings --import tsx scripts/check-schema.ts",
     "test": "node --no-warnings --import tsx --test test/*.test.ts",
-    "typecheck": "tsc --noEmit",
-    "check-schema": "node --no-warnings --import tsx scripts/check-schema.ts"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "dataloader": "^2.2.3",
@@ -26,6 +21,6 @@
   "devDependencies": {
     "@types/node": "^22.20.5",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "typescript": "^5.9.3"
   }
 }

@@ -5,7 +5,7 @@ Ten tutorials on one theme: reliable software built on unreliable parts. Each fo
 | # | Article | Status |
 |---|---|---|
 | 1 | [Offline-First in Practice: Building a Write Queue for React Native With TypeScript](./01-offline-first-react-native/article.md) | Done · [repo](https://github.com/Ernesto-tha-great/checked-luggage) |
-| 2 | [Migrating a GraphQL Schema Without Breaking Legacy Mobile Clients](./02-graphql-mobile-migration/article.md) | Done · [repo](https://github.com/Ernesto-tha-great/graphql-mobile-migration) |
+| 2 | [How To Migrate a GraphQL Schema Without Breaking Old Mobile App Versions](./02-graphql-mobile-migration/article.md) | Done · [repo](https://github.com/Ernesto-tha-great/graphql-mobile-migration) |
 | 3 | [Time to Second Success: Measuring Developer Retention on API Platforms](./03-time-to-second-success/article.md) | Done · [repo](https://github.com/Ernesto-tha-great/time-to-second-success) |
 | 4 | [The Mobile Data Cost of Web Pages: Pricing 35 Popular Websites in 50 Countries](./04-js-data-cost/article.md) | Done · [repo](https://github.com/Ernesto-tha-great/js-data-cost) |
 | 5 | [The Webhooks Handbook: Reliable Delivery With Node.js and TypeScript](./05-webhooks-handbook/article.md) | Done · [repo](https://github.com/Ernesto-tha-great/webhooks-handbook) |
