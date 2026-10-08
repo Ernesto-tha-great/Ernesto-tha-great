@@ -1,0 +1,24 @@
+{
+  "name": "time-to-second-success",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Measure whether developers come back after their first successful API call, and find where they drop off.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "api": "node --no-warnings --import tsx examples/parcel-api.ts",
+    "sample": "node --no-warnings --import tsx scripts/sample.ts",
+    "report": "node --no-warnings --import tsx scripts/report.ts",
+    "chart": "node --no-warnings --import tsx scripts/chart.ts",
+    "test": "node --no-warnings --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
