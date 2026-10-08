@@ -2,7 +2,7 @@
 
 A small write queue for React Native that makes sure every request reaches your server **exactly once**, even on trains, in lifts and on hotel Wi-Fi. It also ships a simulator that puts it through all three, so you can check that claim yourself.
 
-This is the companion code for my article **[Offline-First React Native: Building a Write Queue That Survives Bad Networks](#)**.
+This is the companion code for my article **Offline-First React Native: Building a Write Queue That Survives Bad Networks**.
 
 ![How a request travels from tap to server](./docs/images/architecture.svg)
 
