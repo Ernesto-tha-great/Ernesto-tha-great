@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-labelledby="t d">
+<title id="t">How each site is measured and priced</title>
+<desc id="d">Each site is loaded in a fresh Chromium context with a phone's screen and user agent. Chrome's DevTools protocol counts every byte on the wire and V8 coverage records which JavaScript ran. The browser then leaves to about:blank and comes back with the same cache, and the bytes are counted again. The measurements are joined with mobile data prices per gigabyte and income per person to produce the report and charts. The budget script runs the same measurement on one URL and fails when it costs more than allowed.</desc>
+<style>
+  svg { --surface:#fcfcfb; --panel:#f3f2ee; --box:#ffffff; --line:#c9c8c2; --ink:#0b0b0b; --ink-2:#52514e; --accent:#2a78d6; --code:#1a5fb4; }
+  @media (prefers-color-scheme: dark) { svg { --surface:#1a1a19; --panel:#232321; --box:#2c2c2a; --line:#4a4a46; --ink:#ffffff; --ink-2:#c3c2b7; --accent:#5598e7; --code:#8cb8f0; } }
+  text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+  .h1 { font-size: 22px; font-weight: 700; }
+  .pl { font-size: 13px; font-weight: 600; fill: var(--ink-2); letter-spacing: .06em; text-transform: uppercase; }
+  .box { fill: var(--box); stroke: var(--line); stroke-width: 1.5; }
+  .bt { font-size: 15px; font-weight: 650; }
+  .n { font-size: 15px; font-weight: 700; fill: var(--accent); }
+  .bb { font-size: 12.5px; fill: var(--ink-2); }
+  .code, .code tspan { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; white-space: pre; }
+  .arrow { stroke: var(--accent); stroke-width: 2; fill: none; marker-end: url(#a); }
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>
+<rect width="100%" height="100%" fill="var(--surface)"/>
+<text class="h1" x="40" y="48">One site, two visits, priced fifty ways</text>
+
+<rect x="30" y="76" width="620" height="494" rx="12" fill="var(--panel)"/>
+<text class="pl" x="52" y="104">Measure · 50 sites</text>
+<rect x="670" y="76" width="500" height="494" rx="12" fill="var(--panel)"/>
+<text class="pl" x="692" y="104">Price · 50 countries</text>
+
+<!-- Step 1 -->
+<rect class="box" x="56" y="122" width="568" height="178" rx="10"/>
+<text class="n" x="76" y="150">1</text><text class="bt" x="96" y="150">First visit</text>
+<text class="bb" x="96" y="174">A new browser context: empty cache, a Moto G4's screen and user agent.</text>
+<text class="code" x="96" y="206" style="fill:var(--code)">Network.loadingFinished</text>
+<text class="bb" x="330" y="206">sum encodedDataLength: bytes on the wire</text>
+<text class="code" x="96" y="232" style="fill:var(--code)">page.coverage</text>
+<text class="bb" x="330" y="232">V8 records which JavaScript ran</text>
+<text class="code" x="96" y="258" style="fill:var(--code)">settle()</text>
+<text class="bb" x="330" y="258">wait for 2 s of network quiet (15 s cap)</text>
+<text class="bb" x="96" y="284">No scrolling, no clicking "accept". Only what arrives on its own.</text>
+
+<!-- Step 2 -->
+<rect class="box" x="56" y="330" width="568" height="96" rx="10"/>
+<text class="n" x="76" y="358">2</text><text class="bt" x="96" y="358">Leave</text>
+<text class="code" x="96" y="384" style="fill:var(--code)">page.goto('about:blank')</text>
+<text class="bb" x="96" y="408">Going straight back counts as a reload, and a reload revalidates everything.</text>
+
+<!-- Step 3 -->
+<rect class="box" x="56" y="456" width="568" height="90" rx="10"/>
+<text class="n" x="76" y="484">3</text><text class="bt" x="96" y="484">Repeat visit</text>
+<text class="bb" x="96" y="508">Same context, same cache. Count the bytes again.</text>
+<text class="bb" x="96" y="530">The difference is what your cache headers are worth.</text>
+
+<path class="arrow" d="M340 300 V326"/>
+<path class="arrow" d="M340 426 V452"/>
+
+<!-- Right side -->
+<rect class="box" x="696" y="122" width="448" height="72" rx="10"/>
+<text class="code" x="716" y="152">results/measurements.json</text>
+<text class="bb" x="716" y="176">bytes by type for both visits, JavaScript coverage</text>
+
+<text class="bt" x="912" y="218" text-anchor="middle" style="fill:var(--ink-2)">+</text>
+
+<rect class="box" x="696" y="230" width="448" height="96" rx="10"/>
+<text class="code" x="716" y="258">data/prices.csv</text>
+<text class="bb" x="870" y="258">$ per GB, Cable.co.uk (2023)</text>
+<text class="code" x="716" y="284">data/income.csv</text>
+<text class="bb" x="870" y="284">GNI per capita, World Bank</text>
+<text class="bb" x="716" y="310">÷ 2,080 working hours = average income per hour</text>
+
+<path class="arrow" d="M920 326 V352"/>
+
+<rect class="box" x="696" y="356" width="448" height="72" rx="10"/>
+<text class="code" x="716" y="386">npm run report</text>
+<text class="bb" x="716" y="410">report.md, summary.json, the charts in this article</text>
+
+<rect class="box" x="696" y="456" width="448" height="90" rx="10"/>
+<text class="code" x="716" y="484">npm run budget -- budget.json</text>
+<text class="bb" x="716" y="508">Steps 1 to 3 on your own URL, priced in the countries</text>
+<text class="bb" x="716" y="530">you name. Exits 1 when a page costs more than you allowed.</text>
+
+<path class="arrow" d="M624 158 H692"/>
+</svg>

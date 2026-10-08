@@ -7,7 +7,7 @@ Ten tutorials on one theme: reliable software built on unreliable parts. Each fo
 | 1 | [Offline-First React Native: Building a Write Queue That Survives Bad Networks](./01-offline-first-react-native/article.md) | Done · [repo](https://github.com/Ernesto-tha-great/checked-luggage) |
 | 2 | [Migrating a GraphQL Schema Without Breaking Legacy Mobile Clients](./02-graphql-mobile-migration/article.md) | Done · [repo](https://github.com/Ernesto-tha-great/graphql-mobile-migration) |
 | 3 | [Time to Second Success: Measuring Developer Retention on API Platforms](./03-time-to-second-success/article.md) | Done · [repo](https://github.com/Ernesto-tha-great/time-to-second-success) |
-| 4 | The Mobile Data Cost of JavaScript: Pricing 50 Web Apps in 50 Countries | In progress: measurement running in [CI](https://github.com/Ernesto-tha-great/js-data-cost/actions) |
+| 4 | [The Mobile Data Cost of JavaScript: Pricing 35 Popular Websites in 50 Countries](./04-js-data-cost/article.md) | Done · [repo](https://github.com/Ernesto-tha-great/js-data-cost) |
 | 5 | [The Webhooks Handbook: Reliable Delivery With Node.js and TypeScript](./05-webhooks-handbook/article.md) | Done · [repo](https://github.com/Ernesto-tha-great/webhooks-handbook) |
 | 6 | How Much Spec Do AI Coding Agents Need? Measuring Drift With Tessl and GitHub Spec Kit | Not started |
 | 7 | Guardrails for Autonomous Coding Agents: A CI Pipeline for Reviewing Devin Pull Requests | Not started |

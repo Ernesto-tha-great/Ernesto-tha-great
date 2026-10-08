@@ -74,7 +74,7 @@ The argument is about ownership: platform and DevRel teams should be judged on t
 
 ---
 
-## 4. The Mobile Data Cost of JavaScript: Pricing 50 Web Apps in 50 Countries
+## 4. The Mobile Data Cost of JavaScript: Pricing 35 Popular Websites in 50 Countries
 
 **Subtitle:** Developers measure bundles in kilobytes. Users pay for them in money.
 
