@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { describe, it } from 'node:test';
-import { summarise } from '../src/metrics.js';
-import { instrument } from '../src/middleware.js';
-import { EventStore, type ApiCall } from '../src/store.js';
+import { summarise } from '../src/metrics';
+import { instrument } from '../src/middleware';
+import { EventStore, type ApiCall } from '../src/store';
 
 const T0 = Date.UTC(2026, 5, 1, 9, 0, 0);
 const MIN = 60_000;

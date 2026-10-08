@@ -2,8 +2,10 @@
 -- the second success was prompted by a nudge. All times are unix seconds.
 --
 -- Parameters: :return_gap, :nudge_window, :horizon (seconds).
--- Postgres: replace unixepoch(x) with extract(epoch from x) and use
--- $1, $2, $3 for the parameters.
+-- Postgres: store the times as timestamptz instead of TEXT, replace
+-- unixepoch(x) with extract(epoch from x), and use $1, $2, $3 for the
+-- parameters. cliffs.sql needs the same changes. In schema.sql,
+-- INSERT OR IGNORE becomes INSERT ... ON CONFLICT DO NOTHING.
 WITH
 successes AS (
   SELECT developer_id, unixepoch(at) AS t

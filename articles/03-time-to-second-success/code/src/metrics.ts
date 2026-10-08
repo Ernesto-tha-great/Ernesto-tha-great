@@ -1,4 +1,4 @@
-import { DEFAULT_PARAMS, type Journey, type Params } from './store.js';
+import { DEFAULT_PARAMS, type Journey, type Params } from './store';
 
 export interface Summary {
   developers: number;

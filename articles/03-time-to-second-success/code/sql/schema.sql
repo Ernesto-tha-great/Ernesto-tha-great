@@ -1,4 +1,4 @@
--- Works on SQLite 3.38+. Postgres notes are in the comments in journeys.sql.
+-- Works on SQLite 3.38+. For Postgres, see the note at the top of journeys.sql.
 CREATE TABLE IF NOT EXISTS developers (
   id           TEXT PRIMARY KEY,
   signed_up_at TEXT NOT NULL            -- ISO 8601, UTC

@@ -87,7 +87,7 @@ createServer(async (req, res) => {
 
 function send(res: ServerResponse, status: number, payload: unknown): void {
   res.writeHead(status, { 'content-type': 'application/json' });
-  res.end(JSON.stringify(payload));
+  res.end(JSON.stringify(payload) + '\n');
 }
 
 async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> {

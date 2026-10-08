@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { ApiCall } from './store.js';
+import type { ApiCall } from './store';
 
 export interface InstrumentOptions {
   record(call: ApiCall): void;

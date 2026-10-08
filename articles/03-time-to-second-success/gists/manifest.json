@@ -42,10 +42,24 @@
     "description": "parcel-api.ts from \"Time to Second Success: Measuring Developer Retention on API Platforms\" by Ernest Nnamdi"
   },
   {
+    "file": "report.ts",
+    "gist": null,
+    "url": null,
+    "name": "report.ts",
+    "description": "report.ts from \"Time to Second Success: Measuring Developer Retention on API Platforms\" by Ernest Nnamdi"
+  },
+  {
     "file": "sample.ts",
     "gist": null,
     "url": null,
     "name": "sample.ts",
     "description": "sample.ts from \"Time to Second Success: Measuring Developer Retention on API Platforms\" by Ernest Nnamdi"
+  },
+  {
+    "file": "store.ts",
+    "gist": null,
+    "url": null,
+    "name": "store.ts",
+    "description": "store.ts from \"Time to Second Success: Measuring Developer Retention on API Platforms\" by Ernest Nnamdi"
   }
 ]

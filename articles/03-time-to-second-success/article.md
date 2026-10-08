@@ -14,7 +14,7 @@ The TL;DR of it is that "time to first hello world" measures your onboarding, an
 
 ### Okay, but what's a "success"?
 
-That's totally fair, because "success" sounds fluffy. Here, it means something very boring: an API call that returned a 2xx, on a route that actually does something. Calling `/v1/health` or `/v1/me` proves your key works. It doesn't prove you built anything, so those don't count.
+That's totally fair, because "success" sounds fluffy. Here, it means something very boring: an API call that returned a 2xx, on a route that actually does something. Calling `/v1/health` proves the API is up, and calling `/v1/me` proves your key works. Neither proves you built anything, so those don't count.
 
 - A developer's **first success** is their first 2xx on a real route.
 - Their **second success** is a 2xx that comes at least 24 hours after the first, and within 30 days of it. The 24 hours matter: three calls in the same afternoon are one session, not three visits.
@@ -59,7 +59,7 @@ Here's what the project will look like when we're done:
 ```text
 time-to-second-success/
   sql/
-    schema.sql          # three tables
+    schema.sql          # the tables
     journeys.sql        # one row per developer
     cliffs.sql          # where developers stopped
   src/
@@ -116,16 +116,18 @@ The `--no-warnings` flag hides the "SQLite is experimental" warning Node prints 
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["src", "scripts", "test", "examples"]
+  "exclude": ["node_modules"]
 }
 ```
 
-## Step 2: Three Tables
+Whenever you want to check that everything compiles, run `npm run typecheck`. If it prints nothing, you're good.
 
-The whole measurement runs on three tables. Create a folder called sql, and in it, a file called schema.sql:
+## Step 2: The Tables
+
+The whole measurement runs on three tables, plus a list of routes that don't count. Create a folder called sql, and in it, a file called schema.sql:
 
 ```sql
--- Works on SQLite 3.38+. Postgres notes are in the comments in journeys.sql.
+-- Works on SQLite 3.38+. For Postgres, see the note at the top of journeys.sql.
 CREATE TABLE IF NOT EXISTS developers (
   id           TEXT PRIMARY KEY,
   signed_up_at TEXT NOT NULL            -- ISO 8601, UTC
@@ -179,7 +181,7 @@ export interface ApiCall {
   sdk?: string | null;
 }
 
-/** Records what developers do in three tables, and asks questions about it. */
+/** Records what developers do, and asks questions about it. */
 export class EventStore {
   readonly db: DatabaseSync;
 
@@ -204,11 +206,11 @@ export class EventStore {
 }
 ```
 
-It opens (or creates) a SQLite database file, runs schema.sql, and gives us one method per table.
+It opens (or creates) a SQLite database file, runs schema.sql, and gives us one method for each of the three tables. Run `npm run typecheck` to make sure it compiles.
 
 ## Step 3: Recording Every API Call
 
-Now we need the calls themselves. The cleanest place to record them is in middleware, after the response has been sent, so we know the status code and we never slow a request down.
+Now we need the calls themselves. The cleanest place to record them is in middleware, after the response has been sent, so we know the status code and we don't delay the response.
 
 In the src folder, create middleware.ts and paste in the code from [this gist](https://github.com/Ernesto-tha-great/Ernesto-tha-great/blob/main/articles/03-time-to-second-success/gists/middleware.ts):
 
@@ -354,7 +356,7 @@ createServer(async (req, res) => {
 
 function send(res: ServerResponse, status: number, payload: unknown): void {
   res.writeHead(status, { 'content-type': 'application/json' });
-  res.end(JSON.stringify(payload));
+  res.end(JSON.stringify(payload) + '\n');
 }
 
 async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> {
@@ -370,7 +372,7 @@ async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> 
 
 Notice the `address_unverified` error. In test mode, any address works. In live mode, your sender address has to be verified first. That's the kind of thing test mode and live mode quietly disagree about, and it'll come back later.
 
-Finally, create scripts/calls.ts, so we can see what got recorded:
+Finally, create a folder called scripts, and in it, a file called calls.ts, so we can see what got recorded:
 
 ```ts
 // Prints the API calls recorded so far.
@@ -470,7 +472,7 @@ Each sample developer signs up, maybe makes a few mistakes (a wrong key, a missi
       call('POST', '/v1/labels', 201, 'live');
 ```
 
-The generator also sends every developer a nudge email on day 3, and makes them a bit more likely to come back for a few days after it. Run it:
+The generator also emails anyone who had a first success but hasn't come back three days later, and makes them a bit more likely to come back over the next three days. Run it:
 
 ```bash
 npm run sample
@@ -489,8 +491,10 @@ Here's the heart of the whole thing. In the sql folder, create journeys.sql and 
 -- the second success was prompted by a nudge. All times are unix seconds.
 --
 -- Parameters: :return_gap, :nudge_window, :horizon (seconds).
--- Postgres: replace unixepoch(x) with extract(epoch from x) and use
--- $1, $2, $3 for the parameters.
+-- Postgres: store the times as timestamptz instead of TEXT, replace
+-- unixepoch(x) with extract(epoch from x), and use $1, $2, $3 for the
+-- parameters. cliffs.sql needs the same changes. In schema.sql,
+-- INSERT OR IGNORE becomes INSERT ... ON CONFLICT DO NOTHING.
 WITH
 successes AS (
   SELECT developer_id, unixepoch(at) AS t
@@ -536,9 +540,9 @@ Let's go through it one piece at a time:
 - `second_success` is each developer's earliest success that's at least `:return_gap` after the first (24 hours) and at most `:horizon` after it (30 days).
 - The final `SELECT` gives one row per developer, including the ones who never succeeded at all, which is why it's a `LEFT JOIN`. The `prompted` column checks whether there's a nudge in the `:nudge_window` (72 hours) before the second success.
 
-The query uses SQLite's `unixepoch()`. On Postgres, swap it for `extract(epoch from ...)`, and you're good.
+The query uses SQLite's `unixepoch()` on text timestamps. If you're on Postgres, the comment at the top of the file lists what to change: `timestamptz` columns instead of text, `extract(epoch from ...)` instead of `unixepoch()`, and numbered parameters.
 
-Now let's run it from TypeScript. In store.ts, add these types right above the `EventStore` class:
+Now let's run it from TypeScript. In store.ts, add these types right above the `/** Records what developers do, and asks questions about it. */` comment:
 
 ```ts
 export interface Params {
@@ -632,7 +636,7 @@ npm run journeys
 2000 developers, 1428 with a first success, 1095 with a second.
 ```
 
-Every developer is one row: when they signed up, when they first succeeded, when (and if) they came back, and whether something nudged them. Developer 0004 never got a first success. Developer 0001 succeeded once and hasn't been back since. Those two are the ones the rest of this tutorial is about.
+Phew! Every developer is one row: when they signed up, when they first succeeded, when (and if) they came back, and whether something nudged them. Developer 0004 never got a first success. Developer 0001 came back the next day, tried to create a live label, got a `422` and left. Hold on to that one. Those two are the ones the rest of this tutorial is about.
 
 ## Step 6: Turning Rows Into Numbers
 
@@ -772,17 +776,17 @@ SSR30, unprompted only        47.2%
 TTSS  p50 / p90               5.4 days / 20.3 days
 ```
 
-Let's read that the way you would on a Monday morning:
+So what's it telling us?
 
-- 1,614 of 2,000 developers made a call, and 1,428 got a first success. The median developer got there in 52 minutes. The slowest 10% took almost three days.
-- 76.7% came back for a second success within 30 days. But only 47.2% came back without a nudge. The gap between those two numbers is how much of your retention is your emails doing the work.
+- 1,614 of 2,000 developers made a call, and 1,428 got a first success. The median developer got there in 52 minutes. The slowest 10% took 69 hours or more.
+- 76.7% came back for a second success within 30 days. But only 47.2% came back without a nudge in the 72 hours before. The gap between those two numbers is the most your emails can take credit for. Some of those developers would have come back anyway.
 - The median developer came back after 5.4 days.
 
 Remember, these are invented numbers. The point is the shape of the report, not the values.
 
 ## Step 7: Finding the Cliffs
 
-The report tells you *how many* developers didn't come back. It doesn't tell you *why*. For that, let's look at the very last call each of them made before going quiet. If hundreds of developers' last call was the same error, that's not a coincidence. That's a cliff.
+The report tells you *how many* developers didn't come back. It doesn't tell you *why*. For that, let's look at the last call each of them made before going quiet. If a lot of developers made the same failing call and then stopped, that error is probably why they left. I call those cliffs.
 
 In the sql folder, create cliffs.sql and paste in the code from [this gist](https://github.com/Ernesto-tha-great/Ernesto-tha-great/blob/main/articles/03-time-to-second-success/gists/cliffs.sql):
 
@@ -790,11 +794,12 @@ In the sql folder, create cliffs.sql and paste in the code from [this gist](http
 -- Where did developers stop? For each group, the last call each developer made,
 -- counted by route, status and key mode.
 --
---   stalled: reached a first success, never reached a second one within :horizon
+--   stalled: reached a first success, but no second one within :horizon
 --   never:   made calls but never reached a first success
 --
--- Parameters: :return_gap, :horizon, :as_of (unix seconds). Only developers
--- whose first call is at least :horizon before :as_of are counted, so people
+-- Each developer's window starts at their first success (or, for "never", their
+-- first call) and lasts :horizon. We look at the last call inside it, and only
+-- count developers whose window has closed by :as_of (unix seconds), so people
 -- who are still mid-evaluation don't show up as drop-offs.
 WITH
 successes AS (
@@ -816,10 +821,11 @@ callers AS (
 ),
 groups AS (
   SELECT c.developer_id,
-         CASE WHEN f.developer_id IS NULL THEN 'never' ELSE 'stalled' END AS cohort
+         CASE WHEN f.developer_id IS NULL THEN 'never' ELSE 'stalled' END AS cohort,
+         COALESCE(f.t, c.first_call) AS window_start
   FROM callers c
   LEFT JOIN first_success f ON f.developer_id = c.developer_id
-  WHERE c.first_call <= :as_of - :horizon
+  WHERE COALESCE(f.t, c.first_call) <= :as_of - :horizon
     AND c.developer_id NOT IN (SELECT developer_id FROM returned)
 ),
 last_calls AS (
@@ -827,15 +833,18 @@ last_calls AS (
          ROW_NUMBER() OVER (PARTITION BY a.developer_id ORDER BY a.at DESC) AS rn
   FROM api_calls a JOIN groups g ON g.developer_id = a.developer_id
   WHERE a.route NOT IN (SELECT route FROM excluded_routes)
+    AND unixepoch(a.at) <= g.window_start + :horizon
 )
-SELECT cohort, route, status, key_mode, COUNT(*) AS developers
+SELECT cohort, route, status, key_mode AS keyMode, COUNT(*) AS developers
 FROM last_calls
 WHERE rn = 1
 GROUP BY cohort, route, status, key_mode
 ORDER BY cohort, developers DESC;
 ```
 
-It splits the developers who didn't come back into two groups. "Stalled" developers had a first success but no second one. "Never" developers made calls but never succeeded. For each developer, it finds their last call, and then counts those last calls by route, status and key mode. Like the report, it skips anyone who started too recently to judge.
+It splits the developers who didn't come back into two groups. "Stalled" developers had a first success but no second one within 30 days. "Never" developers made calls but never succeeded. Each developer gets a 30-day window, starting from their first success (or their first call, if they never had one). The query finds the last call they made inside that window, and counts those last calls by route, status and key mode. Like the report, it skips anyone whose 30 days aren't up yet.
+
+The `AS keyMode` near the end renames the column, so the rows come back in the same camelCase as the rest of our TypeScript.
 
 In store.ts, add a `Cliff` type below `Journey`:
 
@@ -844,7 +853,7 @@ export interface Cliff {
   cohort: 'stalled' | 'never';
   route: string;
   status: number;
-  key_mode: 'test' | 'live';
+  keyMode: 'test' | 'live';
   developers: number;
 }
 ```
@@ -861,15 +870,129 @@ And one more method at the end of the class:
   }
 ```
 
+That's the last change to store.ts. Here's the whole file, so you can check yours against it (it's also in [this gist](https://github.com/Ernesto-tha-great/Ernesto-tha-great/blob/main/articles/03-time-to-second-success/gists/store.ts)):
+
+```ts
+import { readFileSync } from 'node:fs';
+import { DatabaseSync } from 'node:sqlite';
+
+const sql = (name: string) => readFileSync(new URL(`../sql/${name}`, import.meta.url), 'utf8');
+
+export interface ApiCall {
+  developerId: string;
+  at: Date;
+  method: string;
+  route: string;
+  status: number;
+  keyMode: 'test' | 'live';
+  sdk?: string | null;
+}
+
+export interface Params {
+  /** Seconds. A success counts as "second" only if it's at least this long after the first. */
+  returnGap: number;
+  /** Seconds. A nudge this soon before the second success makes it "prompted". */
+  nudgeWindow: number;
+  /** Seconds after the first success within which a second success counts. */
+  horizon: number;
+}
+
+export const DEFAULT_PARAMS: Params = {
+  returnGap: 24 * 3600,
+  nudgeWindow: 72 * 3600,
+  horizon: 30 * 86400,
+};
+
+export interface Journey {
+  developerId: string;
+  signedUp: number;
+  firstSuccess: number | null;
+  secondSuccess: number | null;
+  prompted: boolean | null;
+}
+
+export interface Cliff {
+  cohort: 'stalled' | 'never';
+  route: string;
+  status: number;
+  keyMode: 'test' | 'live';
+  developers: number;
+}
+
+/** Records what developers do, and asks questions about it. */
+export class EventStore {
+  readonly db: DatabaseSync;
+
+  constructor(path = ':memory:') {
+    this.db = new DatabaseSync(path);
+    this.db.exec(sql('schema.sql'));
+  }
+
+  addDeveloper(id: string, signedUpAt: Date): void {
+    this.db.prepare('INSERT OR IGNORE INTO developers VALUES (?, ?)').run(id, signedUpAt.toISOString());
+  }
+
+  recordCall(call: ApiCall): void {
+    this.db
+      .prepare('INSERT INTO api_calls VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(call.developerId, call.at.toISOString(), call.method, call.route, call.status, call.keyMode, call.sdk ?? null);
+  }
+
+  recordNudge(developerId: string, at: Date, kind: string): void {
+    this.db.prepare('INSERT INTO nudges VALUES (?, ?, ?)').run(developerId, at.toISOString(), kind);
+  }
+
+  transaction(work: () => void): void {
+    this.db.exec('BEGIN');
+    try {
+      work();
+      this.db.exec('COMMIT');
+    } catch (err) {
+      this.db.exec('ROLLBACK');
+      throw err;
+    }
+  }
+
+  journeys(params: Params = DEFAULT_PARAMS): Journey[] {
+    const rows = this.db.prepare(sql('journeys.sql')).all({
+      return_gap: params.returnGap,
+      nudge_window: params.nudgeWindow,
+      horizon: params.horizon,
+    }) as Array<{ developer_id: string; signed_up: number; first_success: number | null; second_success: number | null; prompted: number | null }>;
+
+    return rows.map((row) => ({
+      developerId: row.developer_id,
+      signedUp: row.signed_up,
+      firstSuccess: row.first_success,
+      secondSuccess: row.second_success,
+      prompted: row.prompted === null ? null : row.prompted === 1,
+    }));
+  }
+
+  /** Developers who made at least one API call, successful or not. */
+  callers(): number {
+    return (this.db.prepare('SELECT COUNT(DISTINCT developer_id) AS n FROM api_calls').get() as { n: number }).n;
+  }
+
+  cliffs(asOf: Date, params: Params = DEFAULT_PARAMS): Cliff[] {
+    return this.db.prepare(sql('cliffs.sql')).all({
+      return_gap: params.returnGap,
+      horizon: params.horizon,
+      as_of: Math.floor(asOf.getTime() / 1000),
+    }) as unknown as Cliff[];
+  }
+}
+```
+
 Finally, in scripts/report.ts, add `const cliffs = store.cliffs(asOf);` right below the `summary` line, and add this to the end of the file:
 
 ```ts
 for (const cohort of ['stalled', 'never'] as const) {
   const rows = cliffs.filter((c) => c.cohort === cohort);
   const total = rows.reduce((sum, r) => sum + r.developers, 0);
-  console.log(`\nLast call before going quiet: ${cohort === 'stalled' ? 'had a first success, never came back' : 'never reached a first success'} (${total})`);
+  console.log(`\nLast call within 30 days: ${cohort === 'stalled' ? 'had a first success, but no second one' : 'never reached a first success'} (${total})`);
   for (const row of rows.slice(0, 6)) {
-    console.log(`  ${String(row.developers).padStart(4)}  ${pct(row.developers / total).padStart(6)}  ${row.status}  ${row.key_mode.padEnd(4)}  ${row.route}`);
+    console.log(`  ${String(row.developers).padStart(4)}  ${pct(row.developers / total).padStart(6)}  ${row.status}  ${row.keyMode.padEnd(4)}  ${row.route}`);
   }
 }
 ```
@@ -893,43 +1016,84 @@ SSR30                         76.7%
 SSR30, unprompted only        47.2%
 TTSS  p50 / p90               5.4 days / 20.3 days
 
-Last call before going quiet: had a first success, never came back (333)
-   109   32.7%  422  live  /v1/labels
-    86   25.8%  400  test  /v1/webhooks/test
-    60   18.0%  200  test  /v1/rates
-    51   15.3%  201  live  /v1/labels
-    10    3.0%  200  test  /v1/webhooks/test
-     9    2.7%  200  test  /v1/labels/:id
+Last call within 30 days: had a first success, but no second one (333)
+   120   36.0%  400  test  /v1/webhooks/test
+    97   29.1%  422  live  /v1/labels
+    45   13.5%  200  test  /v1/webhooks/test
+    29    8.7%  200  test  /v1/rates
+    23    6.9%  201  test  /v1/labels
+    19    5.7%  200  test  /v1/labels/:id
 
-Last call before going quiet: never reached a first success (186)
+Last call within 30 days: never reached a first success (186)
     95   51.1%  401  test  /v1/rates
     91   48.9%  422  test  /v1/labels
 ```
 
-There they are. Of the 333 developers who succeeded once and never came back, 109 stopped on a `422` from a *live* `POST /v1/labels`: the unverified address. Another 86 stopped on a failing webhook test. Those are exactly the two drop-offs I baked into the sample, and the query found both of them without being told where to look.
+There they are! Of the 333 developers who had a first success but no second one, 120 stopped on a failing webhook test. Another 97 came back to go live, got a `422` from a *live* `POST /v1/labels` (the unverified address) and stopped there, just like developer 0001. Those are exactly the two drop-offs I baked into the sample, and the query found both of them without being told where to look.
 
-The rows that end on a 2xx are developers who simply didn't come back. That's normal, and there's no single fix for it. The rows that end on an error are the ones you can do something about this week. In a real API, you'd go and read your docs for verifying a sender address and testing a webhook, and you'd probably find out why.
+The rows that end on a 2xx are developers who went quiet without hitting an error. There's no single fix for those. The rows that end on an error are the ones you can do something about. In a real API, you'd go and read your docs for verifying a sender address and testing a webhook, and you'd probably find out why.
 
 The "never" group says something too: half of them stopped on a `401`, which in the sample means they used the wrong key. That's usually a docs problem, or a dashboard that makes the wrong key too easy to copy.
 
 ## Drawing It
 
-Numbers are good for a report. A chart is better for a team meeting. The finished project has a script that draws the return curve and the cliffs as SVG. If you want it, add `"chart": "node --no-warnings --import tsx scripts/chart.ts"` to your scripts, copy scripts/chart.ts from [this gist](https://github.com/Ernesto-tha-great/Ernesto-tha-great/blob/main/articles/03-time-to-second-success/gists/chart.ts), and add this to the end of report.ts, so the report saves its results for the chart:
+If you'd rather see this than read it, the finished project has a script that draws the return curve and the cliffs as SVG. If you want it, add `"chart": "node --no-warnings --import tsx scripts/chart.ts"` to your scripts, copy scripts/chart.ts from [this gist](https://github.com/Ernesto-tha-great/Ernesto-tha-great/blob/main/articles/03-time-to-second-success/gists/chart.ts), and update report.ts so it saves its results for the chart. Here's the whole file, with a new import at the top and a new block at the bottom (also in [this gist](https://github.com/Ernesto-tha-great/Ernesto-tha-great/blob/main/articles/03-time-to-second-success/gists/report.ts)):
 
 ```ts
+/**
+ * Prints TTFS, SSR30, TTSS and the drop-off cliffs for an events database.
+ *
+ *   npm run report                    # sample.db, as of 2026-09-30
+ *   npm run report -- events.db now   # your own events, as of right now
+ */
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { summarise } from '../src/metrics';
+import { DEFAULT_PARAMS, EventStore } from '../src/store';
+
+const path = process.argv[2] ?? 'sample.db';
+const asOf = process.argv[3] === 'now' || path !== 'sample.db' ? new Date() : new Date(Date.UTC(2026, 8, 30));
+
+const store = new EventStore(path);
+const summary = summarise(store.journeys(), asOf);
+const cliffs = store.cliffs(asOf);
+
+const pct = (x: number) => `${(100 * x).toFixed(1)}%`;
+const hours = (h: number) => (Number.isNaN(h) ? '–' : h < 1 ? `${Math.round(h * 60)} min` : `${h.toFixed(1)} h`);
+const days = (d: number) => (Number.isNaN(d) ? '–' : `${d.toFixed(1)} days`);
+
+console.log(`\n${path}, as of ${asOf.toISOString().slice(0, 10)}`);
+console.log(`(return gap ${DEFAULT_PARAMS.returnGap / 3600} h, nudge window ${DEFAULT_PARAMS.nudgeWindow / 3600} h, horizon ${DEFAULT_PARAMS.horizon / 86400} days)\n`);
+console.log(`Developers                    ${summary.developers}`);
+console.log(`Made at least one call        ${store.callers()}`);
+console.log(`Reached a first success       ${summary.reachedFirstSuccess}`);
+console.log(`TTFS  p50 / p90               ${hours(summary.ttfs.p50)} / ${hours(summary.ttfs.p90)}`);
+console.log(`Eligible for SSR30            ${summary.eligible}`);
+console.log(`SSR30                         ${pct(summary.ssr)}`);
+console.log(`SSR30, unprompted only        ${pct(summary.unpromptedSsr)}`);
+console.log(`TTSS  p50 / p90               ${days(summary.ttss.p50)} / ${days(summary.ttss.p90)}`);
+
+for (const cohort of ['stalled', 'never'] as const) {
+  const rows = cliffs.filter((c) => c.cohort === cohort);
+  const total = rows.reduce((sum, r) => sum + r.developers, 0);
+  console.log(`\nLast call within 30 days: ${cohort === 'stalled' ? 'had a first success, but no second one' : 'never reached a first success'} (${total})`);
+  for (const row of rows.slice(0, 6)) {
+    console.log(`  ${String(row.developers).padStart(4)}  ${pct(row.developers / total).padStart(6)}  ${row.status}  ${row.keyMode.padEnd(4)}  ${row.route}`);
+  }
+}
+
 if (path === 'sample.db') {
   mkdirSync('results', { recursive: true });
   writeFileSync('results/sample-report.json', JSON.stringify({ asOf, params: DEFAULT_PARAMS, summary, cliffs }, null, 2) + '\n');
 }
 ```
 
-You'll also need `import { mkdirSync, writeFileSync } from 'node:fs';` at the top of report.ts. Then run `npm run report` and `npm run chart`:
+Then run `npm run report` and `npm run chart`:
 
 ![Cumulative share of sample developers with a second success by day: 76.7% with any second success by day 30, 47.2% unprompted.](images/return-curve.svg)
 
-![The last call of each of the 333 sample developers who succeeded once and never came back: 109 stopped on a 422 from a live label, 86 on a failing webhook test.](images/cliffs.svg)
+![The last call within 30 days of each of the 333 sample developers with a first success but no second: 120 stopped on a failing webhook test, 97 on a 422 from a live label.](images/cliffs.svg)
 
-Look at the curve right after day 3: that jump is the nudge email. The orange line, the unprompted one, doesn't jump at all.
+Look at the blue line right after day 3: that jump is the nudge email. The orange line, the unprompted one, goes flat for those three days. That's by definition: anyone who comes back within 72 hours of a nudge counts as prompted.
 
 ## How It All Works
 
@@ -938,16 +1102,16 @@ Let's review the whole pipeline:
 1. The middleware records every API call after its response goes out: which account, which route template, which status, test or live.
 2. journeys.sql turns those calls into one row per developer: signup, first success, second success, and whether a nudge came right before the second.
 3. metrics.ts turns those rows into TTFS, SSR30, unprompted SSR30 and TTSS, only judging developers who've had 30 days to come back.
-4. cliffs.sql finds the last call of every developer who didn't come back, and groups them, so the errors that end the most journeys float to the top.
+4. cliffs.sql finds the last call each developer who didn't come back made in their 30-day window, and groups them, so the errors that end the most journeys float to the top.
 
 ## Conclusion
 
-If you only measure how fast developers get started, you'll build a great first five minutes and wonder why nobody sticks around. A second success is a much more honest number, and the cliffs tell you where to spend next week.
+In this tutorial, we recorded every call to an API, defined a first and a second success, and built queries that tell us how many developers come back, how long it takes them, and where the ones who don't come back got stuck. Time to first success is still worth tracking. It's just the first half of the story.
 
 If I were rolling this out on a real API, the next things I'd do are:
 
 - Point the middleware at your production traffic (or your API gateway's logs), and run the report weekly.
-- Record every nudge you send, so you can see how much of your retention is your emails, and how much is your product.
+- Record every nudge you send, so the prompted and unprompted numbers mean something.
 - Split the report by SDK. The `sdk` column is already there, and a cliff that only shows up in one SDK is usually a bug in that SDK.
 
 You can find the complete project [here](https://github.com/Ernesto-tha-great/time-to-second-success). If you run into any issues while following along, drop a comment or reach out to me. Thanks for reading!

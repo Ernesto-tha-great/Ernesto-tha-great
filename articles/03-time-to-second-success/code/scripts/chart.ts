@@ -1,9 +1,10 @@
 /** Draws the sample report as two SVGs: the return curve and the cliffs. */
-import { readFileSync, writeFileSync } from 'node:fs';
-import type { Summary } from '../src/metrics.js';
-import type { Cliff } from '../src/store.js';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import type { Summary } from '../src/metrics';
+import type { Cliff } from '../src/store';
 
 const report = JSON.parse(readFileSync('results/sample-report.json', 'utf8')) as { summary: Summary; cliffs: Cliff[] };
+mkdirSync('docs/images', { recursive: true });
 
 const STYLE = `<style>
   svg { --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#8a8983; --rule:#e4e3de; --s1:#2a78d6; --s2:#eb6834; --bar:#2a78d6; --muted:#c9c8c2; }
@@ -75,22 +76,22 @@ ${STYLE}
   const max = Math.max(...rows.map((r) => r.developers));
 
   const parts = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-labelledby="t d">
-<title id="t">Last call before going quiet, for developers who never returned</title>
-<desc id="d">${rows.map((r) => `${r.status} ${r.key_mode} ${r.route}: ${r.developers}`).join('; ')}.</desc>
+<title id="t">Last call within 30 days, for developers with a first success but no second</title>
+<desc id="d">${rows.map((r) => `${r.status} ${r.keyMode} ${r.route}: ${r.developers}`).join('; ')}.</desc>
 ${STYLE}
 <rect width="100%" height="100%" fill="var(--surface)"/>
 <text class="h1" x="40" y="44">Where developers who succeeded once stopped</text>
-<text class="sub" x="40" y="68">The last call made by each of the ${total} developers who had a first success but no second one within 30 days. Sample data.</text>`];
+<text class="sub" x="40" y="68">The last call within 30 days made by each of the ${total} developers who had a first success but no second one. Sample data.</text>`];
 
   rows.forEach((row, i) => {
     const yy = top + i * rowH;
     const isError = row.status >= 400;
     const w = (row.developers / max) * barMax;
-    parts.push(`<text class="lbl" x="40" y="${yy + 17}" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace">${row.status} ${row.key_mode.padEnd(4, ' ')} ${row.route}</text>`);
+    parts.push(`<text class="lbl" x="40" y="${yy + 17}" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace">${row.status} ${row.keyMode.padEnd(4, ' ')} ${row.route}</text>`);
     parts.push(`<rect x="${40 + labelW}" y="${yy + 2}" width="${w.toFixed(1)}" height="22" rx="4" fill="${isError ? 'var(--bar)' : 'var(--muted)'}"/>`);
     parts.push(`<text class="val" x="${40 + labelW + w + 10}" y="${yy + 18}">${row.developers} <tspan class="axis">(${((100 * row.developers) / total).toFixed(1)}%)</tspan></text>`);
   });
-  parts.push(`<text class="note" x="40" y="${height - 20}">Grey rows ended on a success: those developers simply didn't come back. Blue rows ended on an error: those are the cliffs.</text>`);
+  parts.push(`<text class="note" x="40" y="${height - 20}">Grey rows ended on a success: those developers went quiet without hitting an error. Blue rows ended on an error: those are the cliffs.</text>`);
   parts.push('</svg>');
   writeFileSync('docs/images/cliffs.svg', parts.join('\n') + '\n');
 }

@@ -1,11 +1,12 @@
 -- Where did developers stop? For each group, the last call each developer made,
 -- counted by route, status and key mode.
 --
---   stalled: reached a first success, never reached a second one within :horizon
+--   stalled: reached a first success, but no second one within :horizon
 --   never:   made calls but never reached a first success
 --
--- Parameters: :return_gap, :horizon, :as_of (unix seconds). Only developers
--- whose first call is at least :horizon before :as_of are counted, so people
+-- Each developer's window starts at their first success (or, for "never", their
+-- first call) and lasts :horizon. We look at the last call inside it, and only
+-- count developers whose window has closed by :as_of (unix seconds), so people
 -- who are still mid-evaluation don't show up as drop-offs.
 WITH
 successes AS (
@@ -27,10 +28,11 @@ callers AS (
 ),
 groups AS (
   SELECT c.developer_id,
-         CASE WHEN f.developer_id IS NULL THEN 'never' ELSE 'stalled' END AS cohort
+         CASE WHEN f.developer_id IS NULL THEN 'never' ELSE 'stalled' END AS cohort,
+         COALESCE(f.t, c.first_call) AS window_start
   FROM callers c
   LEFT JOIN first_success f ON f.developer_id = c.developer_id
-  WHERE c.first_call <= :as_of - :horizon
+  WHERE COALESCE(f.t, c.first_call) <= :as_of - :horizon
     AND c.developer_id NOT IN (SELECT developer_id FROM returned)
 ),
 last_calls AS (
@@ -38,8 +40,9 @@ last_calls AS (
          ROW_NUMBER() OVER (PARTITION BY a.developer_id ORDER BY a.at DESC) AS rn
   FROM api_calls a JOIN groups g ON g.developer_id = a.developer_id
   WHERE a.route NOT IN (SELECT route FROM excluded_routes)
+    AND unixepoch(a.at) <= g.window_start + :horizon
 )
-SELECT cohort, route, status, key_mode, COUNT(*) AS developers
+SELECT cohort, route, status, key_mode AS keyMode, COUNT(*) AS developers
 FROM last_calls
 WHERE rn = 1
 GROUP BY cohort, route, status, key_mode

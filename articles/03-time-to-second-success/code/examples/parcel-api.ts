@@ -7,8 +7,8 @@
  *   npm run report -- events.db
  */
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { instrument } from '../src/middleware.js';
-import { EventStore } from '../src/store.js';
+import { instrument } from '../src/middleware';
+import { EventStore } from '../src/store';
 
 const store = new EventStore(process.env.EVENTS_DB ?? 'events.db');
 
@@ -87,7 +87,7 @@ createServer(async (req, res) => {
 
 function send(res: ServerResponse, status: number, payload: unknown): void {
   res.writeHead(status, { 'content-type': 'application/json' });
-  res.end(JSON.stringify(payload));
+  res.end(JSON.stringify(payload) + '\n');
 }
 
 async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> {

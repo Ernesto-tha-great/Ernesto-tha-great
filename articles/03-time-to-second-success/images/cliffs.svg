@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 444" width="1200" height="444" role="img" aria-labelledby="t d">
-<title id="t">Last call before going quiet, for developers who never returned</title>
-<desc id="d">422 live /v1/labels: 109; 400 test /v1/webhooks/test: 86; 200 test /v1/rates: 60; 201 live /v1/labels: 51; 200 test /v1/webhooks/test: 10; 200 test /v1/labels/:id: 9.</desc>
+<title id="t">Last call within 30 days, for developers with a first success but no second</title>
+<desc id="d">400 test /v1/webhooks/test: 120; 422 live /v1/labels: 97; 200 test /v1/webhooks/test: 45; 200 test /v1/rates: 29; 201 test /v1/labels: 23; 200 test /v1/labels/:id: 19.</desc>
 <style>
   svg { --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#8a8983; --rule:#e4e3de; --s1:#2a78d6; --s2:#eb6834; --bar:#2a78d6; --muted:#c9c8c2; }
   @media (prefers-color-scheme: dark) { svg { --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --ink-3:#8f8e86; --rule:#383835; --s1:#3987e5; --s2:#d95926; --bar:#3987e5; --muted:#4a4a46; } }
@@ -14,24 +14,24 @@
 </style>
 <rect width="100%" height="100%" fill="var(--surface)"/>
 <text class="h1" x="40" y="44">Where developers who succeeded once stopped</text>
-<text class="sub" x="40" y="68">The last call made by each of the 333 developers who had a first success but no second one within 30 days. Sample data.</text>
-<text class="lbl" x="40" y="137" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace">422 live /v1/labels</text>
+<text class="sub" x="40" y="68">The last call within 30 days made by each of the 333 developers who had a first success but no second one. Sample data.</text>
+<text class="lbl" x="40" y="137" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace">400 test /v1/webhooks/test</text>
 <rect x="370" y="122" width="560.0" height="22" rx="4" fill="var(--bar)"/>
-<text class="val" x="940" y="138">109 <tspan class="axis">(32.7%)</tspan></text>
-<text class="lbl" x="40" y="181" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace">400 test /v1/webhooks/test</text>
-<rect x="370" y="166" width="441.8" height="22" rx="4" fill="var(--bar)"/>
-<text class="val" x="821.8348623853211" y="182">86 <tspan class="axis">(25.8%)</tspan></text>
-<text class="lbl" x="40" y="225" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace">200 test /v1/rates</text>
-<rect x="370" y="210" width="308.3" height="22" rx="4" fill="var(--muted)"/>
-<text class="val" x="688.256880733945" y="226">60 <tspan class="axis">(18.0%)</tspan></text>
-<text class="lbl" x="40" y="269" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace">201 live /v1/labels</text>
-<rect x="370" y="254" width="262.0" height="22" rx="4" fill="var(--muted)"/>
-<text class="val" x="642.0183486238532" y="270">51 <tspan class="axis">(15.3%)</tspan></text>
-<text class="lbl" x="40" y="313" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace">200 test /v1/webhooks/test</text>
-<rect x="370" y="298" width="51.4" height="22" rx="4" fill="var(--muted)"/>
-<text class="val" x="431.3761467889908" y="314">10 <tspan class="axis">(3.0%)</tspan></text>
+<text class="val" x="940" y="138">120 <tspan class="axis">(36.0%)</tspan></text>
+<text class="lbl" x="40" y="181" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace">422 live /v1/labels</text>
+<rect x="370" y="166" width="452.7" height="22" rx="4" fill="var(--bar)"/>
+<text class="val" x="832.6666666666667" y="182">97 <tspan class="axis">(29.1%)</tspan></text>
+<text class="lbl" x="40" y="225" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace">200 test /v1/webhooks/test</text>
+<rect x="370" y="210" width="210.0" height="22" rx="4" fill="var(--muted)"/>
+<text class="val" x="590" y="226">45 <tspan class="axis">(13.5%)</tspan></text>
+<text class="lbl" x="40" y="269" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace">200 test /v1/rates</text>
+<rect x="370" y="254" width="135.3" height="22" rx="4" fill="var(--muted)"/>
+<text class="val" x="515.3333333333334" y="270">29 <tspan class="axis">(8.7%)</tspan></text>
+<text class="lbl" x="40" y="313" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace">201 test /v1/labels</text>
+<rect x="370" y="298" width="107.3" height="22" rx="4" fill="var(--muted)"/>
+<text class="val" x="487.33333333333337" y="314">23 <tspan class="axis">(6.9%)</tspan></text>
 <text class="lbl" x="40" y="357" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace">200 test /v1/labels/:id</text>
-<rect x="370" y="342" width="46.2" height="22" rx="4" fill="var(--muted)"/>
-<text class="val" x="426.23853211009174" y="358">9 <tspan class="axis">(2.7%)</tspan></text>
-<text class="note" x="40" y="424">Grey rows ended on a success: those developers simply didn't come back. Blue rows ended on an error: those are the cliffs.</text>
+<rect x="370" y="342" width="88.7" height="22" rx="4" fill="var(--muted)"/>
+<text class="val" x="468.66666666666663" y="358">19 <tspan class="axis">(5.7%)</tspan></text>
+<text class="note" x="40" y="424">Grey rows ended on a success: those developers went quiet without hitting an error. Blue rows ended on an error: those are the cliffs.</text>
 </svg>

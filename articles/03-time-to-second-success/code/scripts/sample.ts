@@ -10,7 +10,7 @@
  *   npm run sample            # writes sample.db
  */
 import { rmSync } from 'node:fs';
-import { EventStore } from '../src/store.js';
+import { EventStore } from '../src/store';
 
 const OUT = process.argv[2] ?? 'sample.db';
 const DEVELOPERS = 2000;
