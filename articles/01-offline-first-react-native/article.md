@@ -562,24 +562,8 @@ A few things jumped out at me.
 
 One honest note on all of this: these are simulated networks, built to model situations we all recognise, not recordings from real phones. The simulator also simplifies a couple of things (requests in a batch go one after another, and a network change halfway through a request is ignored). So read the numbers as a fair fight between four approaches under identical conditions, not as a forecast for your users. If you can record your own users' networks, the harness will take them as they are, and I'd love to see the results.
 
-## What this doesn't solve
-
-- **Ordering.** Requests go out in queue order, but a retried request can land after a newer one. If order matters, like a "create" followed by an "update", send them as one request or have the server reject updates that arrive out of order, using a version number.
-- **Conflicts.** This queue makes sure a write *arrives* exactly once. It has no opinion on what happens when two phones edit the same record offline. That's last-writer-wins, version vectors and CRDTs territory, and a different article.
-- **Privacy.** Queued requests can contain personal data, and they sit on the device until they're delivered. Encrypt the storage if they're sensitive, cap the queue's size, and decide what happens when it fills up.
-- **How long to keep keys.** The server has to remember a key for as long as a client might retry it. With a phone that can sit in a drawer for a week, that's longer than you'd think. Seven days is a common choice.
-
 ## Wrapping up
 
 If I could go back and tell weekend-me one thing, it would be this: every write from a phone needs four guarantees. It's on disk before the user is told it's saved. It carries a tag the server checks. The app finds out whether your server is really there before spending a retry. And its schedule is saved on disk rather than held in a timer. Get those four right and both of my bug reports go away.
 
 The library, the demo server, the simulator and the scenarios are all in [the repo](https://github.com/Ernesto-tha-great/checked-luggage). If you break it, tell me how. That's the fun part.
-
-## Further reading
-
-- Marc Brooker, ["Exponential Backoff And Jitter"](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/), AWS Architecture Blog (2015)
-- Brandur Leach, ["Implementing Stripe-like Idempotency Keys in Postgres"](https://brandur.org/idempotency-keys) (2017)
-- IETF HTTPAPI working group, [The Idempotency-Key HTTP Header Field](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/) (Internet-Draft)
-- Riiser, Vigmostad, Griwodz and Halvorsen, "Commute Path Bandwidth Traces from 3G Networks: Analysis and Applications", ACM MMSys 2013: public recordings of real commutes, if you want to feed the simulator something real
-- Netravali et al., "Mahimahi: Accurate Record-and-Replay for HTTP", USENIX ATC 2015, for replaying network conditions against a real device instead of a simulator
-- [`@react-native-community/netinfo`](https://github.com/react-native-netinfo/react-native-netinfo): read what `isConnected` and `isInternetReachable` actually promise

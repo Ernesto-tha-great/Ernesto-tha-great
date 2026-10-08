@@ -43,7 +43,6 @@ By the end, you'll have a CI check that fails a pull request when your page cost
 8. [The repeat visit is the real bill](#the-repeat-visit-is-the-real-bill)
 9. [Three fixes, priced](#three-fixes-priced)
 10. [A performance budget in money](#a-performance-budget-in-money)
-11. [What this doesn't tell you](#what-this-doesnt-tell-you)
 12. [Run it yourself](#run-it-yourself)
 
 ## Kilobytes are a taxi meter
@@ -402,16 +401,6 @@ first visit 17.03 MB, repeat visit 0.01 MB
 
 Look at CNN's numbers next to the study's: 17.03 MB here against 14.63 MB in the measurement run about 20 minutes earlier, and a repeat visit of 0.01 MB instead of 0.63 MB. Wikipedia moved too, from 0.63 MB to 0.59 MB. Pages with video and ads change from one load to the next. If you budget a page like that, measure it a few times and budget against the median, or the check will fail at random and people will learn to ignore it.
 
-## What this doesn't tell you
-
-- **It's one place and one browser.** Every measurement came from one GitHub Actions runner in Azure's East US 2 region, in headless Chromium, with a phone's screen and user agent. Sites serve different pages by region, and some serve different pages to anything that looks like a bot.
-- **It's logged-out home pages, first screen only.** Real use involves scrolling, logging in and clicking, and all of those download more. These numbers are a floor.
-- **Unused JavaScript is an estimate.** The ratio is measured in source characters and applied to compressed bytes.
-- **The prices are 2023 averages.** People buy bundles, promotions and night plans, and the averages hide all of that. Zimbabwe's figure needs checking against a second source before anyone builds an argument on it.
-- **Work time is built from an average.** GNI per capita isn't anyone's wage, and the 2,080-hour year is a convention. For most people in most of these countries, the real number is worse.
-
-The workflow in the repo re-measures every site on the first of each month and commits the results, so the [report](https://github.com/Ernesto-tha-great/js-data-cost/blob/main/results/report.md) will drift from the numbers in this article over time. That's on purpose. If you want to check a claim here, check it against the run from 8 October 2026 in the repo's history.
-
 ## Run it yourself
 
 ```bash
@@ -431,12 +420,3 @@ npm run budget -- budget.json
 ```
 
 I started this because of one video on one landing page. I finished it with a CI check that would have caught that video before my friend did.
-
-## Further reading
-
-- Tim Kadlec, [What Does My Site Cost?](https://whatdoesmysitecost.com). This project is an extension of his idea, adding repeat visits, unused code and work time.
-- Alex Russell, [The Performance Inequality Gap, 2024](https://infrequently.org/2024/01/performance-inequality-gap-2024/), on the devices and networks most of the world actually uses
-- HTTP Archive, [Web Almanac: Page Weight](https://almanac.httparchive.org/en/2022/page-weight), for the same question asked across millions of pages
-- Jakob Gruber, [JavaScript code coverage](https://v8.dev/blog/javascript-code-coverage), on the V8 blog: how block coverage works, and why its ranges nest
-- W3C, [Resource Timing](https://www.w3.org/TR/resource-timing/), on `transferSize` and `Timing-Allow-Origin`
-- Cable.co.uk, [Worldwide Mobile Data Pricing](https://www.cable.co.uk/mobiles/worldwide-data-pricing/), and the World Bank's [GNI per capita](https://data.worldbank.org/indicator/NY.GNP.PCAP.CD) data

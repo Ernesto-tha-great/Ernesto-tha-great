@@ -315,11 +315,3 @@ The metric's job is to change what a team works on, so here's how I'd use it:
 My team's four-minute quickstart wasn't a waste; a short front door matters. But it was only half the job, and for a quarter we only measured that half. Time to Second Success is how I measure the other half now: three tables, one middleware, two queries, and a monthly look at where people give up.
 
 The spec, the SQL, the middleware and the sample are all in [the repo](https://github.com/Ernesto-tha-great/time-to-second-success). If you run it on your own API, I'd genuinely love to hear what your top cliff turned out to be.
-
-## Further reading
-
-- Dave McClure, "Startup Metrics for Pirates: AARRR!" (2007), where activation and retention first got separate names
-- Phil Leggetter, the AAARRRP developer relations strategy framework
-- Mary Thengvall, *The Business Value of Developer Relations* (Apress, 2018)
-- Marilyn Strathern's phrasing of Goodhart's law: "When a measure becomes a target, it ceases to be a good measure" (1997)
-- SQLite documentation, [Window Functions](https://www.sqlite.org/windowfunctions.html), for `ROW_NUMBER()` and friends

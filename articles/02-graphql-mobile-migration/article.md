@@ -472,12 +472,3 @@ The timings will move around on your machine; run `npm run measure` and see. The
 - **Never delete a field on a hunch.** Deprecate it, re-implement it cheaply, watch the traffic, and let a script tell you when it's safe.
 
 On the web, you get to fix your mistakes. On mobile, you have to make them cheap to keep around. Once I made peace with that, the rest was plumbing.
-
-## Further reading
-
-- [DataLoader](https://github.com/graphql/dataloader) by Lee Byron and contributors: the README explains batching and caching better than most blog posts
-- Marc-André Giroux, *Production Ready GraphQL*, especially the chapters on schema design and evolution
-- Shopify, [GraphQL Design Tutorial](https://github.com/Shopify/graphql-design-tutorial): designing a schema from the domain, not the database
-- Relay, [GraphQL Cursor Connections Specification](https://relay.dev/graphql/connections.htm), the pagination shape used here
-- Benjie Gillam, [GraphQL Trusted Documents](https://benjie.dev/graphql/trusted-documents), the clearest explanation of APQ versus trusted documents I've read
-- The GraphQL specification, [`@deprecated`](https://spec.graphql.org/October2021/#sec--deprecated)
