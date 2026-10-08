@@ -1,0 +1,1948 @@
+{
+  "measuredAt": "2026-10-08T02:11:06.830Z",
+  "device": "Moto G4 emulation (Playwright), en-US",
+  "browser": "Chromium 141.0.7390.37",
+  "where": "GitHub Actions runner (ubuntu-latest)",
+  "sites": [
+    {
+      "name": "Google",
+      "url": "https://www.google.com/",
+      "finalUrl": "https://www.google.com/",
+      "status": 200,
+      "title": "Google",
+      "blocked": false,
+      "cold": {
+        "bytes": 930895,
+        "requests": 40,
+        "byType": {
+          "Image": 7570,
+          "Document": 67562,
+          "Ping": 275,
+          "Stylesheet": 7040,
+          "Script": 769631,
+          "XHR": 15903,
+          "Preflight": 0,
+          "Fetch": 3463,
+          "Other": 59451
+        }
+      },
+      "warm": {
+        "bytes": 694216,
+        "requests": 30,
+        "byType": {
+          "Image": 0,
+          "Stylesheet": 31,
+          "Document": 10928,
+          "Script": 676837,
+          "Ping": 170,
+          "XHR": 2767,
+          "Fetch": 3483
+        }
+      },
+      "js": {
+        "transferred": 769631,
+        "sourceBytes": 2413367,
+        "usedBytes": 917226
+      }
+    },
+    {
+      "name": "YouTube",
+      "url": "https://www.youtube.com/",
+      "finalUrl": "https://m.youtube.com/",
+      "status": 200,
+      "title": "YouTube",
+      "blocked": false,
+      "cold": {
+        "bytes": 1340085,
+        "requests": 60,
+        "byType": {
+          "Script": 1122226,
+          "Stylesheet": 81538,
+          "Other": 117,
+          "Image": 7551,
+          "Document": 75251,
+          "Font": 38071,
+          "Fetch": 14893,
+          "XHR": 438
+        }
+      },
+      "warm": {
+        "bytes": 193523,
+        "requests": 28,
+        "byType": {
+          "Stylesheet": 0,
+          "Script": 120220,
+          "Image": 12,
+          "Other": 38,
+          "Font": 0,
+          "Document": 69474,
+          "Fetch": 3321,
+          "XHR": 458
+        }
+      },
+      "js": {
+        "transferred": 1122226,
+        "sourceBytes": 4111277,
+        "usedBytes": 1576544
+      }
+    },
+    {
+      "name": "Facebook",
+      "url": "https://www.facebook.com/",
+      "finalUrl": "https://m.facebook.com/?wtsid=rdr_0IYCRuO2w9yE3EwEo",
+      "status": 200,
+      "title": "Facebook - log in or sign up",
+      "blocked": false,
+      "cold": {
+        "bytes": 824962,
+        "requests": 48,
+        "byType": {
+          "Stylesheet": 12892,
+          "Script": 545455,
+          "Document": 45628,
+          "Image": 11067,
+          "Ping": 2087,
+          "Font": 206080,
+          "Manifest": 673,
+          "XHR": 1080
+        }
+      },
+      "warm": {
+        "bytes": 58600,
+        "requests": 49,
+        "byType": {
+          "Stylesheet": 0,
+          "Script": 0,
+          "Ping": 7868,
+          "Font": 0,
+          "Document": 45486,
+          "Image": 2233,
+          "Manifest": 674,
+          "XHR": 2339
+        }
+      },
+      "js": {
+        "transferred": 545455,
+        "sourceBytes": 2288703,
+        "usedBytes": 885093
+      }
+    },
+    {
+      "name": "Instagram",
+      "url": "https://www.instagram.com/",
+      "finalUrl": "https://www.instagram.com/",
+      "status": 200,
+      "title": "Instagram",
+      "blocked": false,
+      "cold": {
+        "bytes": 2550169,
+        "requests": 41,
+        "byType": {
+          "Script": 2204709,
+          "Ping": 1125,
+          "Image": 3009,
+          "Document": 120758,
+          "Stylesheet": 214001,
+          "XHR": 5964,
+          "Manifest": 603
+        }
+      },
+      "warm": {
+        "bytes": 124767,
+        "requests": 41,
+        "byType": {
+          "Script": 0,
+          "Image": 0,
+          "Stylesheet": 0,
+          "Ping": 246,
+          "Document": 116319,
+          "XHR": 7581,
+          "Manifest": 621
+        }
+      },
+      "js": {
+        "transferred": 2204709,
+        "sourceBytes": 10487095,
+        "usedBytes": 2280483
+      }
+    },
+    {
+      "name": "X",
+      "url": "https://x.com/",
+      "finalUrl": "https://x.com/",
+      "status": 403,
+      "title": "",
+      "blocked": true,
+      "cold": {
+        "bytes": 4702,
+        "requests": 1,
+        "byType": {
+          "Document": 4702
+        }
+      },
+      "warm": {
+        "bytes": 3934,
+        "requests": 1,
+        "byType": {
+          "Document": 3934
+        }
+      },
+      "js": {
+        "transferred": 0,
+        "sourceBytes": 0,
+        "usedBytes": 0
+      }
+    },
+    {
+      "name": "TikTok",
+      "url": "https://www.tiktok.com/",
+      "finalUrl": "https://www.tiktok.com/",
+      "status": 200,
+      "title": "TikTok - Make Your Day",
+      "blocked": false,
+      "cold": {
+        "bytes": 4580118,
+        "requests": 188,
+        "byType": {
+          "Document": 47734,
+          "Script": 2499143,
+          "Image": 115893,
+          "Other": 3532,
+          "Preflight": 0,
+          "Stylesheet": 67920,
+          "XHR": 81390,
+          "Manifest": 1187,
+          "Font": 234506,
+          "Fetch": 545526,
+          "FedCM": 1043,
+          "Media": 982244
+        }
+      },
+      "warm": {
+        "bytes": 189954,
+        "requests": 154,
+        "byType": {
+          "Document": 47521,
+          "Script": 0,
+          "Image": 14678,
+          "Other": 25685,
+          "Preflight": 0,
+          "Stylesheet": 0,
+          "Font": 0,
+          "XHR": 44644,
+          "Manifest": 1189,
+          "Fetch": 56237
+        }
+      },
+      "js": {
+        "transferred": 2499143,
+        "sourceBytes": 9250528,
+        "usedBytes": 3837207
+      }
+    },
+    {
+      "name": "Reddit",
+      "url": "https://www.reddit.com/",
+      "finalUrl": "https://www.reddit.com/",
+      "status": 403,
+      "title": "",
+      "blocked": true,
+      "cold": {
+        "bytes": 191131,
+        "requests": 2,
+        "byType": {
+          "Image": 0,
+          "Document": 191131
+        }
+      },
+      "warm": {
+        "bytes": 190408,
+        "requests": 2,
+        "byType": {
+          "Image": 0,
+          "Document": 190408
+        }
+      },
+      "js": {
+        "transferred": 0,
+        "sourceBytes": 0,
+        "usedBytes": 0
+      }
+    },
+    {
+      "name": "LinkedIn",
+      "url": "https://www.linkedin.com/",
+      "finalUrl": "https://www.linkedin.com/",
+      "status": 403,
+      "title": "Attention Required! | Cloudflare",
+      "blocked": true,
+      "cold": {
+        "bytes": 10836,
+        "requests": 4,
+        "byType": {
+          "Document": 2294,
+          "Stylesheet": 4494,
+          "Image": 4048
+        }
+      },
+      "warm": {
+        "bytes": 2160469,
+        "requests": 59,
+        "byType": {
+          "Document": 110590,
+          "Stylesheet": 77475,
+          "Script": 1567249,
+          "Image": 12716,
+          "Manifest": 3582,
+          "XHR": 9821,
+          "Fetch": 19969,
+          "Other": 268558,
+          "Font": 90509,
+          "Preflight": 0
+        }
+      },
+      "js": {
+        "transferred": 0,
+        "sourceBytes": 631,
+        "usedBytes": 358
+      }
+    },
+    {
+      "name": "Pinterest",
+      "url": "https://www.pinterest.com/",
+      "finalUrl": "https://www.pinterest.com/",
+      "status": 200,
+      "title": "Pinterest",
+      "blocked": false,
+      "cold": {
+        "bytes": 7186203,
+        "requests": 167,
+        "byType": {
+          "Document": 589431,
+          "Font": 151821,
+          "Script": 3037360,
+          "Other": 8539,
+          "Image": 3304146,
+          "Stylesheet": 37700,
+          "XHR": 36631,
+          "Manifest": 5208,
+          "FedCM": 1043,
+          "Fetch": 14324,
+          "Preflight": 0
+        }
+      },
+      "warm": {
+        "bytes": 642865,
+        "requests": 160,
+        "byType": {
+          "Script": 102557,
+          "Font": 0,
+          "Document": 473142,
+          "Other": 10984,
+          "Image": 0,
+          "XHR": 36344,
+          "Stylesheet": 0,
+          "Manifest": 5205,
+          "Fetch": 14633
+        }
+      },
+      "js": {
+        "transferred": 3037360,
+        "sourceBytes": 14171486,
+        "usedBytes": 6078412
+      }
+    },
+    {
+      "name": "Wikipedia",
+      "url": "https://en.m.wikipedia.org/wiki/Main_Page",
+      "finalUrl": "https://en.wikipedia.org/wiki/Main_Page",
+      "status": 200,
+      "title": "Wikipedia, the free encyclopedia",
+      "blocked": false,
+      "cold": {
+        "bytes": 626792,
+        "requests": 28,
+        "byType": {
+          "Document": 54076,
+          "Stylesheet": 25723,
+          "Image": 199196,
+          "Script": 346894,
+          "Ping": 903
+        }
+      },
+      "warm": {
+        "bytes": 318630,
+        "requests": 30,
+        "byType": {
+          "Stylesheet": 0,
+          "Script": 172549,
+          "Image": 90875,
+          "Document": 53670,
+          "Ping": 1536
+        }
+      },
+      "js": {
+        "transferred": 346894,
+        "sourceBytes": 1275400,
+        "usedBytes": 657830
+      }
+    },
+    {
+      "name": "Amazon",
+      "url": "https://www.amazon.com/",
+      "finalUrl": "https://www.amazon.com/",
+      "status": 202,
+      "title": "Amazon.com. Spend less. Smile more.",
+      "blocked": false,
+      "cold": {
+        "bytes": 6274218,
+        "requests": 238,
+        "byType": {
+          "Document": 553138,
+          "Script": 949306,
+          "Fetch": 2196,
+          "Stylesheet": 76836,
+          "Image": 1938694,
+          "Font": 628967,
+          "XHR": 301481,
+          "Ping": 4648,
+          "Media": 1818952
+        }
+      },
+      "warm": {
+        "bytes": 476258,
+        "requests": 174,
+        "byType": {
+          "Stylesheet": 0,
+          "Image": 160729,
+          "Script": 0,
+          "Font": 4324,
+          "Document": 2909,
+          "XHR": 303067,
+          "Ping": 5229,
+          "Media": 0
+        }
+      },
+      "js": {
+        "transferred": 949306,
+        "sourceBytes": 4167139,
+        "usedBytes": 1929772
+      }
+    },
+    {
+      "name": "eBay",
+      "url": "https://www.ebay.com/",
+      "finalUrl": "https://www.ebay.com/",
+      "status": 403,
+      "title": "Error Page | eBay",
+      "blocked": true,
+      "cold": {
+        "bytes": 148551,
+        "requests": 2,
+        "byType": {
+          "Document": 3085,
+          "Image": 145466
+        }
+      },
+      "warm": {
+        "bytes": 6120292,
+        "requests": 159,
+        "byType": {
+          "Stylesheet": 135389,
+          "Script": 2667127,
+          "Image": 2208388,
+          "Font": 79438,
+          "Fetch": 851073,
+          "XHR": 52291,
+          "Document": 125612,
+          "Other": 472,
+          "Ping": 502,
+          "Preflight": 0
+        }
+      },
+      "js": {
+        "transferred": 0,
+        "sourceBytes": 0,
+        "usedBytes": 0
+      }
+    },
+    {
+      "name": "AliExpress",
+      "url": "https://www.aliexpress.com/",
+      "finalUrl": null,
+      "status": null,
+      "title": null,
+      "blocked": false,
+      "cold": null,
+      "warm": null,
+      "js": null,
+      "error": "page.goto: Timeout 45000ms exceeded."
+    },
+    {
+      "name": "Walmart",
+      "url": "https://www.walmart.com/",
+      "finalUrl": "https://www.walmart.com/",
+      "status": 200,
+      "title": "Walmart | Save Money. Live better.",
+      "blocked": false,
+      "cold": {
+        "bytes": 3630177,
+        "requests": 311,
+        "byType": {
+          "Document": 92864,
+          "Script": 2878789,
+          "Font": 66578,
+          "Image": 110522,
+          "Stylesheet": 71980,
+          "XHR": 14199,
+          "Ping": 14643,
+          "Other": 375949,
+          "Fetch": 4653
+        }
+      },
+      "warm": {
+        "bytes": 402304,
+        "requests": 306,
+        "byType": {
+          "Font": 0,
+          "Image": 5848,
+          "Script": 277563,
+          "Stylesheet": 0,
+          "XHR": 14722,
+          "Document": 91750,
+          "Other": 0,
+          "Ping": 10911,
+          "Fetch": 1510
+        }
+      },
+      "js": {
+        "transferred": 2878789,
+        "sourceBytes": 11206227,
+        "usedBytes": 3555565
+      }
+    },
+    {
+      "name": "Etsy",
+      "url": "https://www.etsy.com/",
+      "finalUrl": "https://www.etsy.com/",
+      "status": 403,
+      "title": "etsy.com",
+      "blocked": true,
+      "cold": {
+        "bytes": 40073,
+        "requests": 7,
+        "byType": {
+          "Document": 8963,
+          "Script": 4203,
+          "Stylesheet": 2749,
+          "Font": 16077,
+          "Image": 8081
+        }
+      },
+      "warm": {
+        "bytes": 16421,
+        "requests": 7,
+        "byType": {
+          "Script": 0,
+          "Document": 8340,
+          "Stylesheet": 0,
+          "Font": 0,
+          "Image": 8081
+        }
+      },
+      "js": {
+        "transferred": 4203,
+        "sourceBytes": 29956,
+        "usedBytes": 9486
+      }
+    },
+    {
+      "name": "IKEA",
+      "url": "https://www.ikea.com/",
+      "finalUrl": "https://www.ikea.com/",
+      "status": 200,
+      "title": "Hej! Welcome to IKEA Global",
+      "blocked": false,
+      "cold": {
+        "bytes": 1816749,
+        "requests": 84,
+        "byType": {
+          "Stylesheet": 37777,
+          "Font": 23301,
+          "Script": 304692,
+          "Image": 1159613,
+          "Document": 194355,
+          "Media": 73003,
+          "Fetch": 21301,
+          "XHR": 2707
+        }
+      },
+      "warm": {
+        "bytes": 198799,
+        "requests": 77,
+        "byType": {
+          "Stylesheet": 0,
+          "Script": 4176,
+          "Font": 1064,
+          "Image": 0,
+          "Document": 193406,
+          "XHR": 153,
+          "Fetch": 0
+        }
+      },
+      "js": {
+        "transferred": 304692,
+        "sourceBytes": 932310,
+        "usedBytes": 366744
+      }
+    },
+    {
+      "name": "Booking.com",
+      "url": "https://www.booking.com/",
+      "finalUrl": "https://www.booking.com/?chal_t=1791424756255&force_referer=",
+      "status": 202,
+      "title": "Booking.com | Official site | The best hotels, flights, car rentals & accommodations",
+      "blocked": false,
+      "cold": {
+        "bytes": 6612858,
+        "requests": 288,
+        "byType": {
+          "Document": 131072,
+          "Script": 4907896,
+          "Fetch": 135711,
+          "Stylesheet": 158843,
+          "Image": 1258391,
+          "Preflight": 0,
+          "XHR": 15806,
+          "Ping": 5139
+        }
+      },
+      "warm": {
+        "bytes": 589590,
+        "requests": 268,
+        "byType": {
+          "Script": 327757,
+          "Stylesheet": 642,
+          "Document": 117827,
+          "Image": 20307,
+          "XHR": 5514,
+          "Preflight": 0,
+          "Fetch": 90959,
+          "Ping": 2716,
+          "Other": 23227,
+          "FedCM": 641
+        }
+      },
+      "js": {
+        "transferred": 4907896,
+        "sourceBytes": 17978800,
+        "usedBytes": 6086803
+      }
+    },
+    {
+      "name": "Airbnb",
+      "url": "https://www.airbnb.com/",
+      "finalUrl": "https://www.airbnb.com/",
+      "status": 200,
+      "title": "Airbnb | Vacation rentals, cabins, beach houses, & more",
+      "blocked": false,
+      "cold": {
+        "bytes": 6182737,
+        "requests": 238,
+        "byType": {
+          "Font": 0,
+          "Script": 3449519,
+          "Image": 1936619,
+          "Media": 251655,
+          "Stylesheet": 427092,
+          "Document": 97862,
+          "Other": 4,
+          "XHR": 2576,
+          "Fetch": 17150,
+          "Preflight": 0,
+          "Ping": 260
+        }
+      },
+      "warm": {
+        "bytes": 190852,
+        "requests": 223,
+        "byType": {
+          "Font": 0,
+          "Image": 1646,
+          "Stylesheet": 0,
+          "Script": 98458,
+          "Document": 78840,
+          "Fetch": 9765,
+          "XHR": 1969,
+          "Other": 4,
+          "Ping": 170,
+          "Preflight": 0
+        }
+      },
+      "js": {
+        "transferred": 3449519,
+        "sourceBytes": 10958587,
+        "usedBytes": 5211159
+      }
+    },
+    {
+      "name": "Tripadvisor",
+      "url": "https://www.tripadvisor.com/",
+      "finalUrl": "https://www.tripadvisor.com/",
+      "status": 403,
+      "title": "tripadvisor.com",
+      "blocked": true,
+      "cold": {
+        "bytes": 140166,
+        "requests": 7,
+        "byType": {
+          "Document": 8308,
+          "Script": 4204,
+          "Stylesheet": 2750,
+          "Font": 16076,
+          "Image": 108828
+        }
+      },
+      "warm": {
+        "bytes": 117026,
+        "requests": 7,
+        "byType": {
+          "Script": 0,
+          "Document": 8208,
+          "Stylesheet": 0,
+          "Font": 0,
+          "Image": 108818
+        }
+      },
+      "js": {
+        "transferred": 4204,
+        "sourceBytes": 28439,
+        "usedBytes": 8581
+      }
+    },
+    {
+      "name": "Netflix",
+      "url": "https://www.netflix.com/",
+      "finalUrl": "https://www.netflix.com/",
+      "status": 200,
+      "title": "Netflix - Watch TV Shows Online, Watch Movies Online",
+      "blocked": false,
+      "cold": {
+        "bytes": 3578333,
+        "requests": 108,
+        "byType": {
+          "Stylesheet": 77276,
+          "Document": 174470,
+          "Image": 453482,
+          "XHR": 14789,
+          "Script": 1933626,
+          "Font": 715743,
+          "Preflight": 0,
+          "Fetch": 194943,
+          "Ping": 14004
+        }
+      },
+      "warm": {
+        "bytes": 226135,
+        "requests": 106,
+        "byType": {
+          "Script": 10503,
+          "Stylesheet": 0,
+          "Font": 0,
+          "Image": 15935,
+          "XHR": 6905,
+          "Document": 172239,
+          "Preflight": 0,
+          "Fetch": 8401,
+          "Ping": 12152
+        }
+      },
+      "js": {
+        "transferred": 1933626,
+        "sourceBytes": 10540850,
+        "usedBytes": 5362764
+      }
+    },
+    {
+      "name": "Spotify",
+      "url": "https://open.spotify.com/",
+      "finalUrl": "https://open.spotify.com/",
+      "status": 200,
+      "title": "Spotify - Web Player: Music for everyone",
+      "blocked": false,
+      "cold": {
+        "bytes": 5200541,
+        "requests": 143,
+        "byType": {
+          "Document": 46086,
+          "Other": 20895,
+          "Script": 1578973,
+          "Stylesheet": 62675,
+          "Image": 2468130,
+          "Font": 957772,
+          "Fetch": 61081,
+          "XHR": 4371,
+          "Preflight": 0,
+          "Ping": 558
+        }
+      },
+      "warm": {
+        "bytes": 104583,
+        "requests": 141,
+        "byType": {
+          "Preflight": 0,
+          "Font": 0,
+          "Stylesheet": 0,
+          "Script": 676,
+          "Image": 53851,
+          "Document": 44546,
+          "Other": 0,
+          "XHR": 527,
+          "Fetch": 4983
+        }
+      },
+      "js": {
+        "transferred": 1578973,
+        "sourceBytes": 5529152,
+        "usedBytes": 2252471
+      }
+    },
+    {
+      "name": "Twitch",
+      "url": "https://www.twitch.tv/",
+      "finalUrl": "https://m.twitch.tv/?desktop-redirect=true",
+      "status": 200,
+      "title": "Twitch",
+      "blocked": false,
+      "cold": {
+        "bytes": 3610867,
+        "requests": 153,
+        "byType": {
+          "Document": 75201,
+          "Script": 835565,
+          "Stylesheet": 4040,
+          "XHR": 1777,
+          "Font": 124345,
+          "Preflight": 0,
+          "Image": 2554949,
+          "Fetch": 14990
+        }
+      },
+      "warm": {
+        "bytes": 92171,
+        "requests": 148,
+        "byType": {
+          "Script": 664,
+          "Stylesheet": 0,
+          "Font": 0,
+          "Document": 75219,
+          "XHR": 1076,
+          "Fetch": 15212,
+          "Image": 0
+        }
+      },
+      "js": {
+        "transferred": 835565,
+        "sourceBytes": 3355332,
+        "usedBytes": 2125921
+      }
+    },
+    {
+      "name": "IMDb",
+      "url": "https://www.imdb.com/",
+      "finalUrl": "https://www.imdb.com/",
+      "status": 202,
+      "title": "Human Verification",
+      "blocked": false,
+      "cold": {
+        "bytes": 452889,
+        "requests": 14,
+        "byType": {
+          "Document": 5312,
+          "Script": 411399,
+          "Fetch": 4526,
+          "Image": 0,
+          "Stylesheet": 574,
+          "Font": 31078
+        }
+      },
+      "warm": {
+        "bytes": 104718,
+        "requests": 10,
+        "byType": {
+          "Document": 2588,
+          "Script": 99450,
+          "Stylesheet": 0,
+          "Image": 0,
+          "Font": 0,
+          "Fetch": 2680
+        }
+      },
+      "js": {
+        "transferred": 411399,
+        "sourceBytes": 1581575,
+        "usedBytes": 741212
+      }
+    },
+    {
+      "name": "BBC News",
+      "url": "https://www.bbc.com/news",
+      "finalUrl": "https://www.bbc.com/news",
+      "status": 200,
+      "title": "BBC News - Breaking news, video and the latest top stories from the U.S. and around the world",
+      "blocked": false,
+      "cold": {
+        "bytes": 2127379,
+        "requests": 107,
+        "byType": {
+          "Document": 69643,
+          "Script": 1357303,
+          "Image": 204502,
+          "Font": 402845,
+          "Fetch": 72351,
+          "XHR": 13766,
+          "Preflight": 0,
+          "Stylesheet": 6969
+        }
+      },
+      "warm": {
+        "bytes": 88088,
+        "requests": 108,
+        "byType": {
+          "Script": 1446,
+          "Image": 1894,
+          "Document": 68474,
+          "Font": 0,
+          "Fetch": 11166,
+          "Preflight": 0,
+          "XHR": 5108,
+          "Stylesheet": 0
+        }
+      },
+      "js": {
+        "transferred": 1357303,
+        "sourceBytes": 5066893,
+        "usedBytes": 1874372
+      }
+    },
+    {
+      "name": "CNN",
+      "url": "https://www.cnn.com/",
+      "finalUrl": "https://www.cnn.com/",
+      "status": 200,
+      "title": "Breaking News, Latest News and Videos | CNN",
+      "blocked": false,
+      "cold": {
+        "bytes": 14628873,
+        "requests": 66,
+        "byType": {
+          "Font": 436889,
+          "Script": 1321300,
+          "Document": 618482,
+          "Image": 743666,
+          "Media": 11383163,
+          "Fetch": 78126,
+          "XHR": 4064,
+          "Stylesheet": 43183,
+          "Preflight": 0
+        }
+      },
+      "warm": {
+        "bytes": 627123,
+        "requests": 58,
+        "byType": {
+          "Font": 0,
+          "Script": 1706,
+          "Image": 7769,
+          "Document": 615858,
+          "XHR": 1157,
+          "Stylesheet": 212,
+          "Fetch": 421
+        }
+      },
+      "js": {
+        "transferred": 1321300,
+        "sourceBytes": 7898705,
+        "usedBytes": 2295083
+      }
+    },
+    {
+      "name": "The New York Times",
+      "url": "https://www.nytimes.com/",
+      "finalUrl": "https://www.nytimes.com/",
+      "status": 403,
+      "title": "nytimes.com",
+      "blocked": true,
+      "cold": {
+        "bytes": 119600,
+        "requests": 9,
+        "byType": {
+          "Document": 11684,
+          "Script": 4201,
+          "Stylesheet": 12371,
+          "Font": 91344
+        }
+      },
+      "warm": {
+        "bytes": 11713,
+        "requests": 9,
+        "byType": {
+          "Script": 0,
+          "Document": 11713,
+          "Stylesheet": 0,
+          "Font": 0
+        }
+      },
+      "js": {
+        "transferred": 4201,
+        "sourceBytes": 29765,
+        "usedBytes": 9462
+      }
+    },
+    {
+      "name": "The Guardian",
+      "url": "https://www.theguardian.com/international",
+      "finalUrl": "https://www.theguardian.com/international",
+      "status": 200,
+      "title": "Latest news, sport and opinion from the Guardian",
+      "blocked": false,
+      "cold": {
+        "bytes": 2599003,
+        "requests": 174,
+        "byType": {
+          "Document": 155696,
+          "Image": 232384,
+          "Font": 86112,
+          "Other": 44445,
+          "Stylesheet": 7586,
+          "Script": 2017666,
+          "XHR": 21973,
+          "Preflight": 0,
+          "Fetch": 33141
+        }
+      },
+      "warm": {
+        "bytes": 140421,
+        "requests": 140,
+        "byType": {
+          "Font": 0,
+          "Image": 533,
+          "Other": 0,
+          "Document": 63,
+          "Stylesheet": 0,
+          "Script": 131824,
+          "XHR": 3726,
+          "Fetch": 4275,
+          "Preflight": 0
+        }
+      },
+      "js": {
+        "transferred": 2017666,
+        "sourceBytes": 7347348,
+        "usedBytes": 3657335
+      }
+    },
+    {
+      "name": "Reuters",
+      "url": "https://www.reuters.com/",
+      "finalUrl": "https://www.reuters.com/",
+      "status": 401,
+      "title": "reuters.com",
+      "blocked": true,
+      "cold": {
+        "bytes": 31474,
+        "requests": 6,
+        "byType": {
+          "Document": 8447,
+          "Script": 4204,
+          "Stylesheet": 2746,
+          "Font": 16077
+        }
+      },
+      "warm": {
+        "bytes": 8433,
+        "requests": 6,
+        "byType": {
+          "Script": 0,
+          "Document": 8433,
+          "Stylesheet": 0,
+          "Font": 0
+        }
+      },
+      "js": {
+        "transferred": 4204,
+        "sourceBytes": 28435,
+        "usedBytes": 8577
+      }
+    },
+    {
+      "name": "ESPN",
+      "url": "https://www.espn.com/",
+      "finalUrl": "https://www.espn.com/",
+      "status": 202,
+      "title": "ESPN - Serving Sports Fans. Anytime. Anywhere.",
+      "blocked": false,
+      "cold": {
+        "bytes": 5859794,
+        "requests": 201,
+        "byType": {
+          "Document": 746160,
+          "Script": 3135074,
+          "Fetch": 98816,
+          "Image": 1294582,
+          "Stylesheet": 269747,
+          "Font": 237164,
+          "XHR": 55024,
+          "Preflight": 0,
+          "Other": 23227
+        }
+      },
+      "warm": {
+        "bytes": 272628,
+        "requests": 183,
+        "byType": {
+          "Document": 107353,
+          "Script": 74111,
+          "Image": 27680,
+          "Font": 0,
+          "Stylesheet": 0,
+          "XHR": 14124,
+          "Fetch": 49360,
+          "Other": 0
+        }
+      },
+      "js": {
+        "transferred": 3135074,
+        "sourceBytes": 15516384,
+        "usedBytes": 6907106
+      }
+    },
+    {
+      "name": "The Weather Channel",
+      "url": "https://weather.com/",
+      "finalUrl": "https://weather.com/",
+      "status": 429,
+      "title": "Vercel Security Checkpoint",
+      "blocked": true,
+      "cold": {
+        "bytes": 35136,
+        "requests": 2,
+        "byType": {
+          "Document": 35136,
+          "Preflight": 0
+        }
+      },
+      "warm": {
+        "bytes": 5871871,
+        "requests": 1054,
+        "byType": {
+          "Document": 332191,
+          "Stylesheet": 55841,
+          "Image": 679385,
+          "Script": 4486841,
+          "Font": 49501,
+          "Other": 47845,
+          "Preflight": 0,
+          "XHR": 60141,
+          "Fetch": 152838,
+          "Ping": 6245,
+          "FedCM": 1043
+        }
+      },
+      "js": {
+        "transferred": 0,
+        "sourceBytes": 23708,
+        "usedBytes": 22545
+      }
+    },
+    {
+      "name": "Yahoo",
+      "url": "https://www.yahoo.com/",
+      "finalUrl": "https://www.yahoo.com/",
+      "status": 200,
+      "title": "Yahoo | Mail, Weather, Search, Politics, News, Finance, Sports & Videos",
+      "blocked": false,
+      "cold": {
+        "bytes": 5744151,
+        "requests": 1105,
+        "byType": {
+          "Stylesheet": 194920,
+          "Script": 3538163,
+          "Font": 91154,
+          "Document": 483638,
+          "Image": 821548,
+          "Fetch": 533191,
+          "Preflight": 0,
+          "Other": 39944,
+          "Ping": 7141,
+          "XHR": 34452
+        }
+      },
+      "warm": {
+        "bytes": 2008668,
+        "requests": 424,
+        "byType": {
+          "Script": 1163059,
+          "Image": 101361,
+          "Stylesheet": 4611,
+          "Document": 198972,
+          "Font": 75297,
+          "Ping": 3399,
+          "Fetch": 405654,
+          "Other": 40967,
+          "Preflight": 0,
+          "XHR": 15348
+        }
+      },
+      "js": {
+        "transferred": 3538163,
+        "sourceBytes": 14522191,
+        "usedBytes": 7614337
+      }
+    },
+    {
+      "name": "Bing",
+      "url": "https://www.bing.com/",
+      "finalUrl": "https://www.bing.com/",
+      "status": 200,
+      "title": "Search - Microsoft Bing",
+      "blocked": false,
+      "cold": {
+        "bytes": 856144,
+        "requests": 111,
+        "byType": {
+          "Document": 26250,
+          "Stylesheet": 27885,
+          "Script": 40373,
+          "XHR": 253826,
+          "Image": 492748,
+          "Fetch": 15062
+        }
+      },
+      "warm": {
+        "bytes": 94816,
+        "requests": 111,
+        "byType": {
+          "Stylesheet": 0,
+          "Script": 0,
+          "Document": 25586,
+          "XHR": 1630,
+          "Image": 52562,
+          "Fetch": 15038
+        }
+      },
+      "js": {
+        "transferred": 40373,
+        "sourceBytes": 1121664,
+        "usedBytes": 335629
+      }
+    },
+    {
+      "name": "DuckDuckGo",
+      "url": "https://duckduckgo.com/",
+      "finalUrl": "https://duckduckgo.com/",
+      "status": 200,
+      "title": "DuckDuckGo - Protection. Privacy. Peace of mind.",
+      "blocked": false,
+      "cold": {
+        "bytes": 1616474,
+        "requests": 68,
+        "byType": {
+          "Document": 60997,
+          "Font": 540476,
+          "Image": 475055,
+          "Script": 514005,
+          "Ping": 5815,
+          "Stylesheet": 17863,
+          "Fetch": 2263
+        }
+      },
+      "warm": {
+        "bytes": 8089,
+        "requests": 68,
+        "byType": {
+          "Font": 0,
+          "Script": 0,
+          "Image": 0,
+          "Document": 2274,
+          "Ping": 5815,
+          "Stylesheet": 0,
+          "Fetch": 0
+        }
+      },
+      "js": {
+        "transferred": 514005,
+        "sourceBytes": 1635402,
+        "usedBytes": 768287
+      }
+    },
+    {
+      "name": "ChatGPT",
+      "url": "https://chatgpt.com/",
+      "finalUrl": "https://chatgpt.com/",
+      "status": 200,
+      "title": "ChatGPT: Chat, Work, Create & Code with AI",
+      "blocked": false,
+      "cold": {
+        "bytes": 1110958,
+        "requests": 174,
+        "byType": {
+          "Document": 75146,
+          "Script": 827733,
+          "Stylesheet": 109285,
+          "Other": 14776,
+          "Manifest": 6410,
+          "Fetch": 77608
+        }
+      },
+      "warm": {
+        "bytes": 150060,
+        "requests": 174,
+        "byType": {
+          "Stylesheet": 0,
+          "Document": 74799,
+          "Script": 0,
+          "Other": 0,
+          "Manifest": 6365,
+          "Fetch": 68896
+        }
+      },
+      "js": {
+        "transferred": 827733,
+        "sourceBytes": 2658007,
+        "usedBytes": 1164709
+      }
+    },
+    {
+      "name": "GitHub",
+      "url": "https://github.com/",
+      "finalUrl": "https://github.com/",
+      "status": 200,
+      "title": "GitHub · Change is constant. GitHub keeps you ahead. · GitHub · GitHub",
+      "blocked": false,
+      "cold": {
+        "bytes": 4643163,
+        "requests": 162,
+        "byType": {
+          "Document": 122861,
+          "Stylesheet": 292223,
+          "Script": 1855206,
+          "Font": 257457,
+          "Image": 1283903,
+          "Ping": 492,
+          "Fetch": 826250,
+          "Manifest": 4771
+        }
+      },
+      "warm": {
+        "bytes": 122631,
+        "requests": 162,
+        "byType": {
+          "Script": 0,
+          "Font": 0,
+          "Stylesheet": 0,
+          "Document": 122140,
+          "Image": 0,
+          "Ping": 491,
+          "Fetch": 0,
+          "Manifest": 0
+        }
+      },
+      "js": {
+        "transferred": 1855206,
+        "sourceBytes": 6588720,
+        "usedBytes": 2022402
+      }
+    },
+    {
+      "name": "Stack Overflow",
+      "url": "https://stackoverflow.com/questions",
+      "finalUrl": "https://stackoverflow.com/questions",
+      "status": 403,
+      "title": "Just a moment...",
+      "blocked": true,
+      "cold": {
+        "bytes": 222253,
+        "requests": 5,
+        "byType": {
+          "Document": 4412,
+          "Script": 129943,
+          "Image": 6144,
+          "XHR": 81754
+        }
+      },
+      "warm": {
+        "bytes": 9105175,
+        "requests": 1419,
+        "byType": {
+          "Document": 136258,
+          "Script": 1696383,
+          "XHR": 91346,
+          "Stylesheet": 394299,
+          "Image": 6688896,
+          "Other": 23227,
+          "Fetch": 74766,
+          "Preflight": 0
+        }
+      },
+      "js": {
+        "transferred": 129943,
+        "sourceBytes": 329807,
+        "usedBytes": 191758
+      }
+    },
+    {
+      "name": "Medium",
+      "url": "https://medium.com/",
+      "finalUrl": "https://medium.com/",
+      "status": 403,
+      "title": "Just a moment...",
+      "blocked": true,
+      "cold": {
+        "bytes": 219278,
+        "requests": 5,
+        "byType": {
+          "Document": 4109,
+          "Script": 132618,
+          "Image": 1052,
+          "XHR": 81499
+        }
+      },
+      "warm": {
+        "bytes": 1771105,
+        "requests": 102,
+        "byType": {
+          "Document": 46291,
+          "Image": 52107,
+          "Stylesheet": 36925,
+          "Script": 1561535,
+          "Font": 62095,
+          "XHR": 2400,
+          "Ping": 216,
+          "Fetch": 9536
+        }
+      },
+      "js": {
+        "transferred": 132618,
+        "sourceBytes": 337482,
+        "usedBytes": 194770
+      }
+    },
+    {
+      "name": "Quora",
+      "url": "https://www.quora.com/",
+      "finalUrl": "https://www.quora.com/",
+      "status": 403,
+      "title": "Just a moment...",
+      "blocked": true,
+      "cold": {
+        "bytes": 217637,
+        "requests": 5,
+        "byType": {
+          "Document": 3969,
+          "Script": 125157,
+          "Image": 7756,
+          "XHR": 80755
+        }
+      },
+      "warm": {
+        "bytes": 804042,
+        "requests": 38,
+        "byType": {
+          "Stylesheet": 0,
+          "Script": 376831,
+          "Document": 26988,
+          "Image": 348435,
+          "Fetch": 47863,
+          "XHR": 3078,
+          "Other": 847
+        }
+      },
+      "js": {
+        "transferred": 125157,
+        "sourceBytes": 332273,
+        "usedBytes": 192402
+      }
+    },
+    {
+      "name": "Notion",
+      "url": "https://www.notion.com/",
+      "finalUrl": "https://www.notion.com/",
+      "status": 200,
+      "title": "The AI workspace that works for you. | Notion",
+      "blocked": false,
+      "cold": {
+        "bytes": 3262329,
+        "requests": 222,
+        "byType": {
+          "Image": 442422,
+          "Document": 35081,
+          "Stylesheet": 173649,
+          "Font": 147825,
+          "Script": 2228200,
+          "Preflight": 0,
+          "Other": 732,
+          "Fetch": 232921,
+          "Ping": 1499
+        }
+      },
+      "warm": {
+        "bytes": 177822,
+        "requests": 220,
+        "byType": {
+          "Font": 0,
+          "Stylesheet": 0,
+          "Script": 132865,
+          "Image": 2864,
+          "Document": 36592,
+          "Preflight": 0,
+          "Fetch": 4288,
+          "Other": 0,
+          "Ping": 1213
+        }
+      },
+      "js": {
+        "transferred": 2228200,
+        "sourceBytes": 7326742,
+        "usedBytes": 3818583
+      }
+    },
+    {
+      "name": "Canva",
+      "url": "https://www.canva.com/",
+      "finalUrl": "https://www.canva.com/",
+      "status": 403,
+      "title": "Just a moment...",
+      "blocked": true,
+      "cold": {
+        "bytes": 1012307,
+        "requests": 9,
+        "byType": {
+          "Document": 254393,
+          "Image": 490897,
+          "Font": 59468,
+          "Script": 126587,
+          "XHR": 80962
+        }
+      },
+      "warm": {
+        "bytes": 8992327,
+        "requests": 69,
+        "byType": {
+          "Document": 59968,
+          "Image": 128696,
+          "Script": 652600,
+          "Stylesheet": 57241,
+          "Font": 67574,
+          "Media": 2989654,
+          "Fetch": 1617,
+          "Preflight": 0,
+          "XHR": 4094785,
+          "Other": 940192
+        }
+      },
+      "js": {
+        "transferred": 126587,
+        "sourceBytes": 912539,
+        "usedBytes": 497492
+      }
+    },
+    {
+      "name": "Figma",
+      "url": "https://www.figma.com/",
+      "finalUrl": "https://www.figma.com/",
+      "status": 200,
+      "title": "Figma: The collaborative canvas for design, code, and AI",
+      "blocked": false,
+      "cold": {
+        "bytes": 5779727,
+        "requests": 196,
+        "byType": {
+          "Stylesheet": 25845,
+          "Font": 316498,
+          "Other": 491319,
+          "Image": 520343,
+          "Script": 1383399,
+          "Document": 297835,
+          "Fetch": 167582,
+          "XHR": 2576190,
+          "Ping": 716,
+          "Preflight": 0
+        }
+      },
+      "warm": {
+        "bytes": 2685126,
+        "requests": 193,
+        "byType": {
+          "Font": 0,
+          "Image": 0,
+          "Stylesheet": 0,
+          "Script": 0,
+          "Document": 100196,
+          "Other": 370,
+          "Fetch": 8224,
+          "XHR": 2576182,
+          "Ping": 154
+        }
+      },
+      "js": {
+        "transferred": 1383399,
+        "sourceBytes": 17978332,
+        "usedBytes": 7470818
+      }
+    },
+    {
+      "name": "Zoom",
+      "url": "https://zoom.us/",
+      "finalUrl": "https://www.zoom.com/",
+      "status": 200,
+      "title": "One platform to connect | Zoom",
+      "blocked": false,
+      "cold": {
+        "bytes": 4315039,
+        "requests": 284,
+        "byType": {
+          "Document": 54030,
+          "Other": 5982,
+          "Script": 2487689,
+          "Image": 1101926,
+          "Stylesheet": 338723,
+          "Font": 251212,
+          "XHR": 11487,
+          "Fetch": 63990,
+          "Ping": 0,
+          "Preflight": 0
+        }
+      },
+      "warm": {
+        "bytes": 128207,
+        "requests": 282,
+        "byType": {
+          "Script": 98885,
+          "Image": 11070,
+          "Stylesheet": 0,
+          "Document": 4878,
+          "Other": 0,
+          "XHR": 5146,
+          "Font": 0,
+          "Fetch": 7922,
+          "Ping": 306,
+          "Preflight": 0
+        }
+      },
+      "js": {
+        "transferred": 2487689,
+        "sourceBytes": 8708889,
+        "usedBytes": 3780354
+      }
+    },
+    {
+      "name": "Microsoft",
+      "url": "https://www.microsoft.com/",
+      "finalUrl": "https://www.microsoft.com/en-us",
+      "status": 200,
+      "title": "Microsoft – AI, Cloud, Productivity, Computing, Gaming & Apps",
+      "blocked": false,
+      "cold": {
+        "bytes": 10802920,
+        "requests": 285,
+        "byType": {
+          "Document": 45175,
+          "Stylesheet": 279685,
+          "Script": 3138424,
+          "Font": 388641,
+          "Image": 2711359,
+          "XHR": 16240,
+          "Preflight": 0,
+          "Fetch": 4223155,
+          "Ping": 241
+        }
+      },
+      "warm": {
+        "bytes": 26661,
+        "requests": 271,
+        "byType": {
+          "Script": 8740,
+          "Stylesheet": 0,
+          "Font": 0,
+          "Image": 3113,
+          "Document": 342,
+          "Fetch": 48,
+          "XHR": 14250,
+          "Ping": 168
+        }
+      },
+      "js": {
+        "transferred": 3138424,
+        "sourceBytes": 10994836,
+        "usedBytes": 6470392
+      }
+    },
+    {
+      "name": "Apple",
+      "url": "https://www.apple.com/",
+      "finalUrl": "https://www.apple.com/",
+      "status": 200,
+      "title": "Apple",
+      "blocked": false,
+      "cold": {
+        "bytes": 1726162,
+        "requests": 43,
+        "byType": {
+          "Document": 43593,
+          "Stylesheet": 77443,
+          "Script": 424963,
+          "Image": 193110,
+          "Font": 938327,
+          "XHR": 2098,
+          "Fetch": 46628
+        }
+      },
+      "warm": {
+        "bytes": 415404,
+        "requests": 42,
+        "byType": {
+          "Stylesheet": 37300,
+          "Script": 377523,
+          "Image": 581,
+          "Document": 0,
+          "Font": 0,
+          "Fetch": 0,
+          "XHR": 0
+        }
+      },
+      "js": {
+        "transferred": 424963,
+        "sourceBytes": 1127979,
+        "usedBytes": 520770
+      }
+    },
+    {
+      "name": "PayPal",
+      "url": "https://www.paypal.com/",
+      "finalUrl": "https://www.paypal.com/us/home",
+      "status": 200,
+      "title": "Pay, Send and Save Money with PayPal | PayPal US",
+      "blocked": false,
+      "cold": {
+        "bytes": 2059916,
+        "requests": 132,
+        "byType": {
+          "Document": 135676,
+          "Font": 333936,
+          "Script": 1266220,
+          "Stylesheet": 125242,
+          "Image": 164843,
+          "XHR": 28050,
+          "Fetch": 5949
+        }
+      },
+      "warm": {
+        "bytes": 175508,
+        "requests": 130,
+        "byType": {
+          "Script": 7250,
+          "Stylesheet": 1464,
+          "Font": 0,
+          "Image": 0,
+          "Document": 133253,
+          "XHR": 28195,
+          "Fetch": 5346
+        }
+      },
+      "js": {
+        "transferred": 1266220,
+        "sourceBytes": 5969299,
+        "usedBytes": 2557527
+      }
+    },
+    {
+      "name": "Uber",
+      "url": "https://www.uber.com/",
+      "finalUrl": "https://www.uber.com/",
+      "status": 200,
+      "title": "Explore the Uber Platform | Uber United States",
+      "blocked": false,
+      "cold": {
+        "bytes": 3357267,
+        "requests": 97,
+        "byType": {
+          "Document": 108586,
+          "Stylesheet": 13408,
+          "Script": 1456512,
+          "Fetch": 64801,
+          "Image": 1593825,
+          "Font": 120135
+        }
+      },
+      "warm": {
+        "bytes": 126836,
+        "requests": 98,
+        "byType": {
+          "Script": 0,
+          "Font": 0,
+          "Stylesheet": 0,
+          "Document": 108068,
+          "Image": 0,
+          "Fetch": 18298,
+          "Ping": 470
+        }
+      },
+      "js": {
+        "transferred": 1456512,
+        "sourceBytes": 6115948,
+        "usedBytes": 2292264
+      }
+    },
+    {
+      "name": "Duolingo",
+      "url": "https://www.duolingo.com/",
+      "finalUrl": "https://www.duolingo.com/",
+      "status": 200,
+      "title": "Duolingo - The world’s most popular way to learn",
+      "blocked": false,
+      "cold": {
+        "bytes": 3793592,
+        "requests": 154,
+        "byType": {
+          "Document": 33749,
+          "Script": 2283494,
+          "Stylesheet": 79238,
+          "XHR": 7253,
+          "Font": 204551,
+          "Image": 471496,
+          "Preflight": 0,
+          "Fetch": 713261,
+          "Ping": 550
+        }
+      },
+      "warm": {
+        "bytes": 53687,
+        "requests": 144,
+        "byType": {
+          "Document": 32922,
+          "Stylesheet": 0,
+          "Script": 5818,
+          "XHR": 3875,
+          "Font": 0,
+          "Image": 209,
+          "Fetch": 10863
+        }
+      },
+      "js": {
+        "transferred": 2283494,
+        "sourceBytes": 8010612,
+        "usedBytes": 3362502
+      }
+    },
+    {
+      "name": "Nike",
+      "url": "https://www.nike.com/",
+      "finalUrl": "https://www.nike.com/",
+      "status": 200,
+      "title": "Nike. Just Do It. Nike.com",
+      "blocked": false,
+      "cold": {
+        "bytes": 5841130,
+        "requests": 310,
+        "byType": {
+          "Font": 354089,
+          "Stylesheet": 161812,
+          "Script": 4717060,
+          "Document": 190040,
+          "Image": 291665,
+          "Fetch": 67020,
+          "Preflight": 0,
+          "XHR": 44422,
+          "Ping": 15022
+        }
+      },
+      "warm": {
+        "bytes": 1039179,
+        "requests": 307,
+        "byType": {
+          "Font": 0,
+          "Stylesheet": 1060,
+          "Script": 357219,
+          "Image": 601820,
+          "Document": 6199,
+          "Fetch": 18497,
+          "Preflight": 0,
+          "XHR": 43822,
+          "Ping": 10562
+        }
+      },
+      "js": {
+        "transferred": 4717060,
+        "sourceBytes": 13964158,
+        "usedBytes": 7190320
+      }
+    },
+    {
+      "name": "Zara",
+      "url": "https://www.zara.com/",
+      "finalUrl": "https://www.zara.com/",
+      "status": 403,
+      "title": "Access Denied",
+      "blocked": true,
+      "cold": {
+        "bytes": 647,
+        "requests": 1,
+        "byType": {
+          "Document": 647
+        }
+      },
+      "warm": {
+        "bytes": 647,
+        "requests": 1,
+        "byType": {
+          "Document": 647
+        }
+      },
+      "js": {
+        "transferred": 0,
+        "sourceBytes": 0,
+        "usedBytes": 0
+      }
+    },
+    {
+      "name": "WhatsApp",
+      "url": "https://www.whatsapp.com/",
+      "finalUrl": "https://www.whatsapp.com/",
+      "status": 200,
+      "title": "WhatsApp | Secure and Reliable Free Private Messaging and Calling",
+      "blocked": false,
+      "cold": {
+        "bytes": 1692491,
+        "requests": 41,
+        "byType": {
+          "Document": 57171,
+          "Image": 920164,
+          "Stylesheet": 42028,
+          "Script": 391592,
+          "Font": 279450,
+          "Manifest": 1847,
+          "XHR": 239
+        }
+      },
+      "warm": {
+        "bytes": 970112,
+        "requests": 41,
+        "byType": {
+          "Stylesheet": 0,
+          "Image": 915441,
+          "Document": 54143,
+          "Script": 0,
+          "Font": 0,
+          "Manifest": 305,
+          "XHR": 223
+        }
+      },
+      "js": {
+        "transferred": 391592,
+        "sourceBytes": 1587366,
+        "usedBytes": 625707
+      }
+    }
+  ]
+}

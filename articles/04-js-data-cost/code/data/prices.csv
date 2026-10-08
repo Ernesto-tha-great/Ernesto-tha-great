@@ -1,0 +1,238 @@
+country,usd_per_gb
+"Israel",0.02
+"Italy",0.09
+"Fiji",0.09
+"San Marino",0.1
+"Cambodia",0.12
+"Pakistan",0.12
+"India",0.16
+"Kyrgyzstan",0.17
+"France",0.2
+"Colombia",0.2
+"Haiti",0.22
+"Bangladesh",0.23
+"Sri Lanka",0.25
+"Lao People's Democratic Republic",0.25
+"Russian Federation",0.25
+"Ukraine",0.27
+"Indonesia",0.28
+"Uruguay",0.28
+"Moldova",0.28
+"Malaysia",0.28
+"Vietnam",0.29
+"Uzbekistan",0.3
+"Trinidad and Tobago",0.32
+"Montenegro",0.32
+"Martinique",0.33
+"Samoa",0.36
+"Poland",0.37
+"China",0.38
+"Malawi",0.38
+"Mongolia",0.38
+"Nigeria",0.39
+"Brazil",0.4
+"Ghana",0.4
+"Thailand",0.41
+"Kazakhstan",0.41
+"Monaco",0.42
+"Nepal",0.43
+"Turkey",0.44
+"Australia",0.44
+"Peru",0.45
+"Réunion",0.48
+"Spain",0.48
+"Guadeloupe",0.49
+"French Guiana",0.49
+"Somalia",0.5
+"Austria",0.51
+"Kuwait",0.52
+"Finland",0.52
+"Congo (Democratic Republic of)",0.52
+"Romania",0.54
+"Nicaragua",0.55
+"Rwanda",0.55
+"Western Sahara",0.58
+"Serbia",0.58
+"Philippines",0.59
+"Turks and Caicos Islands",0.59
+"Kenya",0.59
+"United Kingdom",0.62
+"Singapore",0.63
+"Morocco",0.63
+"Chile",0.64
+"Egypt",0.65
+"Syria",0.67
+"Mauritius",0.67
+"Sierra Leone",0.67
+"Belarus",0.67
+"Gibraltar",0.67
+"Congo",0.68
+"Ethiopia",0.68
+"Denmark",0.69
+"Taiwan",0.69
+"Jamaica",0.7
+"Bhutan",0.71
+"Mayotte",0.71
+"Algeria",0.73
+"French Polynesia",0.75
+"Jordan",0.76
+"Mozambique",0.78
+"Honduras",0.78
+"Dominican Republic",0.79
+"Saint Barthélemy (St. Barts)",0.8
+"Hong Kong",0.82
+"Libya",0.82
+"Tanzania",0.84
+"Slovenia",0.84
+"Macedonia",0.86
+"Suriname",0.95
+"Armenia",0.98
+"Myanmar",0.99
+"Ecuador",1
+"Angola",1.01
+"Afghanistan",1.02
+"Bosnia and Herzegovina",1.03
+"Paraguay",1.04
+"Venezuela",1.05
+"Saint Vincent and the Grenadines",1.05
+"Iraq",1.07
+"St. Pierre and Miquelon",1.07
+"El Salvador",1.08
+"Iceland",1.08
+"Palestine, State of",1.08
+"Burundi",1.1
+"Uganda",1.11
+"Argentina",1.11
+"Dominica",1.11
+"Madagascar",1.12
+"Estonia",1.15
+"Sudan",1.16
+"Guatemala",1.17
+"Côte d'Ivoire",1.18
+"Croatia",1.19
+"Liechtenstein",1.19
+"Tonga",1.19
+"Namibia",1.2
+"Kosovo",1.25
+"Eswatini",1.26
+"Lithuania",1.26
+"Djibouti",1.26
+"Tunisia",1.28
+"Jersey",1.31
+"Bahrain",1.31
+"Mauritania",1.32
+"Papua New Guinea",1.36
+"Macau",1.44
+"Isle of Man",1.44
+"Togo",1.45
+"Saudi Arabia",1.49
+"Ireland",1.5
+"Iran",1.5
+"American Samoa",1.5
+"Guinea",1.51
+"Saint Kitts and Nevis",1.54
+"Vanuatu",1.54
+"Albania",1.55
+"Saint Lucia",1.58
+"Saint-Martin (France)",1.58
+"Equatorial Guinea",1.59
+"The Netherlands",1.61
+"Panama",1.63
+"Cameroon",1.63
+"Senegal",1.63
+"Niger",1.63
+"Tajikistan",1.65
+"Guernsey",1.69
+"Luxembourg",1.7
+"Hungary",1.71
+"Azerbaijan",1.76
+"Portugal",1.79
+"South Africa",1.81
+"Grenada",1.81
+"Aruba",1.85
+"Costa Rica",1.86
+"Bolivia",1.87
+"Anguilla",1.88
+"Brunei Darussalam",1.89
+"Georgia",1.91
+"Lebanon",1.91
+"Timor-Leste",1.92
+"Oman",1.95
+"Lesotho",1.96
+"Botswana",1.99
+"Mexico",2.03
+"Germany",2.14
+"Maldives",2.16
+"Comoros",2.18
+"Belgium",2.23
+"Faroe Islands",2.24
+"Palau",2.25
+"Montserrat",2.26
+"Sweden",2.33
+"Malta",2.36
+"Guyana",2.36
+"Benin",2.37
+"Qatar",2.4
+"São Tomé and Príncipe",2.41
+"Cyprus",2.41
+"Liberia",2.5
+"Guam",2.5
+"Puerto Rico",2.58
+"Cook Islands",2.62
+"Northern Mariana Islands",2.67
+"Slovakia",2.68
+"Curaçao",2.68
+"Caribbean Netherlands",2.71
+"Cuba",2.71
+"Guinea-Bissau",2.72
+"Barbados",2.75
+"Sint Maarten",2.77
+"Greece",2.79
+"Belize",2.92
+"Cocos (Keeling) Islands",3.03
+"Nauru",3.09
+"Czech Republic",3.12
+"Niue",3.14
+"Kiribati",3.19
+"Antigua and Barbuda",3.2
+"Latvia",3.21
+"Cape Verde",3.24
+"Burkina Faso",3.27
+"Bermuda",3.42
+"Japan",3.48
+"Gambia",3.56
+"Greenland",3.58
+"New Caledonia",3.76
+"Norway",4.07
+"Gabon",4.09
+"Chad",4.09
+"Virgin Islands (U.S.)",4.33
+"British Indian Ocean Territory",4.44
+"Mali",4.56
+"United Arab Emirates",4.61
+"Andorra",4.82
+"Bahamas",4.99
+"South Korea",5.01
+"Virgin Islands (British)",5.24
+"Canada",5.37
+"Seychelles",5.43
+"New Zealand",5.89
+"United States",6
+"Marshall Islands",6.08
+"Tuvalu",6.08
+"Åland Islands",6.12
+"Norfolk Island",6.39
+"Solomon Islands",6.96
+"Micronesia (Federated States of)",7.11
+"Switzerland",7.29
+"Zambia",8.01
+"Cayman Islands",8.39
+"Svalbard and Jan Mayen",9
+"Central African Republic",10.9
+"Turkmenistan",11.42
+"Yemen",15.68
+"Tokelau",17.24
+"South Sudan",23.7
+"Saint Helena",40.13
+"Falkland Islands",40.58
+"Zimbabwe",43.75

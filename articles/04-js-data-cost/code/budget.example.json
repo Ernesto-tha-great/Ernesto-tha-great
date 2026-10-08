@@ -1,0 +1,8 @@
+{
+  "url": "https://en.wikipedia.org/wiki/Main_Page",
+  "budgets": [
+    { "country": "Kenya", "maxFirstVisitWorkSeconds": 5, "maxMonthlyUsd": 0.05 },
+    { "country": "India", "maxFirstVisitWorkSeconds": 5, "maxMonthlyUsd": 0.05 },
+    { "country": "Brazil", "maxFirstVisitWorkSeconds": 5, "maxMonthlyUsd": 0.05 }
+  ]
+}

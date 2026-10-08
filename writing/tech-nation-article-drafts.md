@@ -74,11 +74,11 @@ The argument is about ownership: platform and DevRel teams should be judged on t
 
 ---
 
-## 4. The Mobile Data Cost of JavaScript: Pricing 35 Popular Websites in 50 Countries
+## 4. The Mobile Data Cost of Web Pages: Pricing 35 Popular Websites in 50 Countries
 
 **Subtitle:** Developers measure bundles in kilobytes. Users pay for them in money.
 
-**Description:** Developers talk about bundle size in kilobytes. Users pay for it in money, and the price of a gigabyte varies enormously by country. Using one consistent source of per-gigabyte mobile data prices (cable.co.uk's latest worldwide comparison), I measured what a first load and a repeat visit cost for 50 widely used web apps. I also measured how much of that cost is JavaScript the user never runs. I report each cost two ways: in money, and as a share of income (GNI per capita).
+**Description:** Developers talk about bundle size in kilobytes. Users pay for it in money, and the price of a gigabyte varies enormously by country. Using one consistent source of per-gigabyte mobile data prices (cable.co.uk's latest worldwide comparison), I measured what a first load and a repeat visit cost for 50 widely used web apps. I also measured how much of that cost is JavaScript the user never runs. I report each cost two ways: in money, and in work time at average income (GNI per capita over a 2,080-hour year). Share of income was tried first and rounded to zero, which the article admits.
 
 The piece names the heaviest apps and shows the three fixes that saved the most money per kilobyte. It argues that teams should set performance budgets in currency as well as milliseconds. It builds on Tim Kadlec's What Does My Site Cost?, extended to apps, caching and unused code.
 

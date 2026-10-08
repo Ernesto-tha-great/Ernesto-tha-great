@@ -1,0 +1,27 @@
+name: budget
+
+# A performance budget in money. Copy this into your own repo, point
+# budget.json at your page, and a pull request that makes the page cost too
+# much in the countries you named goes red.
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: Measure this URL instead of the one in budget.example.json
+        required: false
+
+jobs:
+  budget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run budget -- budget.example.json ${URL:+"$URL"}
+        env:
+          URL: ${{ inputs.url }}

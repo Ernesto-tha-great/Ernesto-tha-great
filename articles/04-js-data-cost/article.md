@@ -1,4 +1,4 @@
-# The Mobile Data Cost of JavaScript: Pricing 35 Popular Websites in 50 Countries
+# The Mobile Data Cost of Web Pages: Pricing 35 Popular Websites in 50 Countries
 
 *Developers measure bundles in kilobytes. The people loading them pay in money, and some of them pay in hours.*
 
@@ -10,9 +10,9 @@ The first landing page I was properly proud of had a full-screen background vide
 
 The video was 9 MB, and it started playing before anyone asked it to. I had measured that page. I knew its Largest Contentful Paint to a tenth of a second. I had never once asked what it cost to look at.
 
-That's the question this article answers, for 50 of the most visited sites on the web, in 50 countries. I loaded each site twice in a real browser on an emulated phone: once as a first-time visitor and once as a returning one. I counted every byte, separated the JavaScript that ran from the JavaScript that didn't, and priced the result against mobile data prices and average incomes. Here's what came back:
+That's the question this article answers, for 50 popular websites, in 50 countries. I loaded each site twice in a real browser on an emulated phone: once as a first-time visitor and once as a returning one. I counted every byte, separated the JavaScript that ran from the JavaScript that didn't, and priced the result against mobile data prices and average incomes. Here's what came back:
 
-- **35 of the 50 sites could be measured.** The other 15 blocked a headless browser or timed out.
+- **35 of the 50 sites could be measured.** Fourteen blocked a headless browser and one timed out.
 - **The median first visit downloaded 3.58 MB.** JavaScript was 45% of all the bytes, more than images, video and fonts put together.
 - **About 57% of that JavaScript didn't run during load.**
 - **1 GB of mobile data costs 34 hours of average work in Zimbabwe, 1.3 hours in Ethiopia, 8.4 minutes in the United States, and 2.7 seconds in Israel.**
@@ -34,7 +34,7 @@ By the end, you'll have a CI check that fails a pull request when your page cost
 ## Table of contents
 
 1. [Kilobytes are a taxi meter](#kilobytes-are-a-taxi-meter)
-2. [Step 1: Count bytes the way a carrier does](#step-1-count-bytes-the-way-a-carrier-does)
+2. [Step 1: Count bytes the way a carrier would](#step-1-count-bytes-the-way-a-carrier-would)
 3. [Step 2: Find the JavaScript that didn't run](#step-2-find-the-javascript-that-didnt-run)
 4. [Step 3: Come back like a person would](#step-3-come-back-like-a-person-would)
 5. [Step 4: Turn bytes into money, then into time](#step-4-turn-bytes-into-money-then-into-time)
@@ -44,6 +44,7 @@ By the end, you'll have a CI check that fails a pull request when your page cost
 9. [Three fixes, priced](#three-fixes-priced)
 10. [A performance budget in money](#a-performance-budget-in-money)
 11. [What this doesn't tell you](#what-this-doesnt-tell-you)
+12. [Run it yourself](#run-it-yourself)
 
 ## Kilobytes are a taxi meter
 
@@ -55,11 +56,11 @@ Here's where the analogy breaks: in a taxi, the passenger can see the meter. Nob
 
 The measuring is done by [Playwright](https://playwright.dev) and a bit of the Chrome DevTools Protocol. It happens in three steps, and each one has a trap.
 
-## Step 1: Count bytes the way a carrier does
+## Step 1: Count bytes the way a carrier would
 
-The obvious tool is the browser's own [Resource Timing API](https://www.w3.org/TR/resource-timing/): every `PerformanceResourceTiming` entry has a `transferSize`. The trap is in the spec. For a cross-origin resource, `transferSize` is **zero** unless the server sends a `Timing-Allow-Origin` header. Most third-party scripts, ads and CDNs don't. So measuring from inside the page undercounts exactly the bytes you have the least control over.
+The obvious tool is the browser's own [Resource Timing API](https://www.w3.org/TR/resource-timing/): every `PerformanceResourceTiming` entry has a `transferSize`. The trap is in the spec. For a cross-origin resource, `transferSize` is **zero** unless the server sends a `Timing-Allow-Origin` header. Many third-party scripts and ad servers don't (the big public CDNs mostly do). So measuring from inside the page undercounts exactly the bytes you have the least control over.
 
-So measure from outside the page. Chrome's network stack reports, for every request, how many bytes actually came over the wire: the [`Network.loadingFinished`](https://chromedevtools.github.io/devtools-protocol/tot/Network/#event-loadingFinished) event's `encodedDataLength`. That number is compressed, includes headers, and doesn't care about origins. It's the closest thing a browser has to a carrier's meter.
+So measure from outside the page. Chrome's network stack reports, for every request, how many bytes actually came over the wire: the [`Network.loadingFinished`](https://chromedevtools.github.io/devtools-protocol/tot/Network/#event-loadingFinished) event's `encodedDataLength`. That number is compressed, includes headers, and doesn't care about origins. It leaves out uploads and TLS overhead, so it's close to what a carrier counts rather than identical, but it's the closest thing a browser has to the meter.
 
 Playwright gives you a raw DevTools session, so a tracker is a few event listeners ([`src/measure.ts`](https://github.com/Ernesto-tha-great/js-data-cost/blob/main/src/measure.ts)):
 
@@ -86,12 +87,18 @@ class TransferTracker {
       this.stats.requests += 1;
       this.stats.byType[type] = (this.stats.byType[type] ?? 0) + e.encodedDataLength;
     });
-    // loadingFailed also clears inflight; takeStats() returns and resets the counters
+    // loadingFailed also clears inflight
   }
+
+  get busy(): boolean {
+    return this.inflight.size > 0;
+  }
+
+  // takeStats() returns the counters and resets them
 }
 ```
 
-The second trap is deciding when a page has *finished* loading. The `load` event fires long before the analytics, the chat widget and the lazy hero image have finished arriving. Playwright's `networkidle` option looks like the answer, but its own docs mark it **discouraged**. In practice it either fires too early or never fires, on pages that poll forever. So the tracker keeps its own count of requests in flight, and a small loop waits for two seconds of silence, with a 15-second cap for the pages that never stop talking:
+The second trap is deciding when a page has *finished* loading. The `load` event fires long before the analytics, the chat widget and the lazy hero image have finished arriving. Playwright's `networkidle` option looks like the answer, but its own docs mark it **discouraged**. It waits for 500 ms with no network connections, a gap that can open between two polls of a chatty page, or never open at all on a page that holds a connection. So the tracker keeps its own count of requests in flight, and a small loop waits for two seconds of silence, with a 15-second cap for the pages that never stop talking:
 
 ```ts
 async function settle(tracker: TransferTracker, quietMs: number, maxMs: number): Promise<void> {
@@ -116,7 +123,7 @@ await settle(tracker, quietMs, maxSettleMs);
 const coverage = await page.coverage.stopJSCoverage();
 ```
 
-V8 reports coverage as ranges with execution counts. They nest: there's a range for the whole script, then one for each function inside it, then one for each untaken branch inside those. The trap is that the outer range almost always has a count of 1, because the script *was* evaluated, even when most of the functions inside it never ran. Count only the top level and every script looks 100% used.
+V8 reports coverage as ranges with execution counts. They nest: there's a range for the whole script, then one for each function inside it, then ranges for blocks whose count differs from their parent's, such as a branch that was never taken. The trap is that the outer range almost always has a count of 1, because the script *was* evaluated, even when most of the functions inside it never ran. Count only the top level and every script looks 100% used.
 
 The fix is to paint the ranges in order, so each inner range overwrites its parent ([`src/coverage.ts`](https://github.com/Ernesto-tha-great/js-data-cost/blob/main/src/coverage.ts)):
 
@@ -140,17 +147,19 @@ export function executedBytes(entry: CoverageEntry): { total: number; used: numb
 
 There's a unit test with a script that ran, a function inside it that didn't, and a branch inside a function that ran but was never taken. It checks that only the right 55 of 100 characters count as used.
 
-Two honest caveats belong here, not in a footnote. First, coverage measures *source characters*, but the network delivered *compressed bytes*. I apply the unused share to the bytes on the wire, which makes the result an estimate. Second, "didn't run during load" isn't the same as "dead code". Some of it runs when someone opens a menu. The point is that it didn't need to arrive *first*.
+This number comes with two caveats. First, coverage measures *source characters*, but the network delivered *compressed bytes*. I apply the unused share to the bytes on the wire, which makes the result an estimate. Second, "didn't run during load" isn't the same as "dead code". Some of it runs when someone opens a menu. The point is that it didn't need to arrive *first*.
 
 ## Step 3: Come back like a person would
 
-A first visit is only half the story. Most people visit the sites in this list every day, and from the second visit on, the cache does most of the work. So after the first visit, the same browser context loads the site again, with the same cache.
+A first visit is only half the story. Plenty of people open sites like these every day, and from the second visit on, the cache does most of the work. So after the first visit, the same browser context loads the site again, with the same cache.
 
-The trap here cost me an evening. If you call `page.goto()` with the URL you're already on, Chrome treats it as a reload, and a reload revalidates every cached resource with the server. Your "repeat visit" ends up downloading nearly as much as the first one, and you write a very wrong paragraph about how caching doesn't work. A person doesn't reload. They leave and come back, so the script does the same:
+The trap here cost me an evening, though not in the way I expected. My first local test page had an "image" that was really a few bytes of text with a `.jpg` name. Chrome gave up on it, so there was nothing to cache, and the repeat visit downloaded it again. I'd half-written a paragraph about caching not working before I worked out that the test was lying, not the cache. A cache can only keep what arrived whole. The fixture now uses a real script and stylesheet.
+
+Between the two visits, the script takes a detour through `about:blank`, the way a person leaves and comes back. It isn't load-bearing: modern Chrome only revalidates the HTML on a reload anyway. It just keeps the second load an ordinary navigation:
 
 ```ts
-// Leave and come back, like a person would. Navigating to the same URL
-// twice in a row is treated as a reload, which revalidates the cache.
+// Leave and come back, like a person would. (Chrome only revalidates the
+// HTML on a reload anyway; the detour keeps this an ordinary navigation.)
 await page.goto('about:blank');
 tracker.takeStats();
 await page.goto(site.url, { waitUntil: 'load', timeout: timeoutMs });
@@ -166,14 +175,19 @@ Prices come from Cable.co.uk's [Worldwide Mobile Data Pricing](https://www.cable
 
 My first version of the report divided a month of each site's cost by average monthly income. It printed **0.000%** for half the countries. That was true and useless: nobody uses only one website, and a percentage with three zeros after the point doesn't make anyone change a build config.
 
-Time works better. The World Bank publishes [GNI per capita](https://data.worldbank.org/indicator/NY.GNP.PCAP.CD) for every country. Spread over a 2,080-hour working year (40 hours a week, 52 weeks), that's an average hourly income, and any price can be turned into how long someone works to pay it ([`src/cost.ts`](https://github.com/Ernesto-tha-great/js-data-cost/blob/main/src/cost.ts)):
+Time works better. The World Bank publishes [GNI per capita](https://data.worldbank.org/indicator/NY.GNP.PCAP.CD) for most countries (the figures here are for 2025, and 2024 for the United Arab Emirates). Spread over a 2,080-hour working year (40 hours a week, 52 weeks), that's an average hourly income, and any price can be turned into how long someone works to pay it ([`src/cost.ts`](https://github.com/Ernesto-tha-great/js-data-cost/blob/main/src/cost.ts)):
 
 ```ts
 export const BYTES_PER_GB = 2 ** 30;
+export const VISITS_PER_MONTH = 150; // five a day: 1 first visit, 149 repeat visits
 export const WORK_HOURS_PER_YEAR = 2080;
 
 export function costUsd(bytes: number, usdPerGb: number): number {
   return (bytes / BYTES_PER_GB) * usdPerGb;
+}
+
+export function monthlyBytes(coldBytes: number, warmBytes: number): number {
+  return coldBytes + (VISITS_PER_MONTH - 1) * warmBytes;
 }
 
 export function workSeconds(usd: number, gniPerCapitaUsd: number): number {
@@ -185,9 +199,9 @@ GNI per capita is an average, not a wage, and it flatters any country with a wid
 
 ## What 35 sites download
 
-The list of 50 sites is in [`sites.json`](https://github.com/Ernesto-tha-great/js-data-cost/blob/main/sites.json): search engines, social networks, shops, news, streaming, travel and developer tools. Fifteen of them wouldn't let a headless browser on a datacentre IP through. X, Reddit, LinkedIn, eBay, Stack Overflow, Medium and Canva were among the sites that served a bot wall, and AliExpress timed out. Those 15 are excluded rather than counted at the size of a "Just a moment..." page.
+The list of 50 sites is in [`sites.json`](https://github.com/Ernesto-tha-great/js-data-cost/blob/main/sites.json): search engines, social networks, shops, news, streaming, travel and developer tools. Fourteen of them wouldn't let a headless browser on a datacentre IP through: X, Reddit, LinkedIn, eBay, Stack Overflow, Medium and Canva were among the sites that served a bot wall. AliExpress timed out. All 15 are excluded rather than counted at the size of a "Just a moment..." page.
 
-The run analysed here happened on 8 October 2026, from a GitHub Actions runner, in Chromium 141.
+The run analysed here happened on 8 October 2026, on a GitHub Actions runner in Azure's East US 2 region, in Chromium 141.
 
 ![First-visit download size of 35 popular sites. Each bar is split into JavaScript that ran during load, JavaScript that didn't, and everything else. CNN is heaviest at 14.63 MB; the median is 3.58 MB.](images/site-weights.svg)
 
@@ -199,19 +213,21 @@ The median first visit was **3.58 MB**. The median repeat visit was **0.19 MB**,
 | Image | 21.5% |
 | Media (video, audio) | 10.6% |
 | Font | 6.2% |
-| Fetch / XHR | 8.7% |
+| Fetch (API calls) | 6.1% |
 | Document (HTML) | 4.2% |
 | Stylesheet | 2.7% |
+| XHR (older API calls) | 2.6% |
+| Everything else | 0.9% |
 
 On 21 of the 35 sites, JavaScript was more than half of everything downloaded. The median site sent 1.46 MB of it, compressed, and an estimated **57%** of all the JavaScript didn't run during load. That's a quarter of all first-visit bytes (25.7%) arriving to do nothing yet.
 
-The heaviest page wasn't heavy because of JavaScript, though. CNN's homepage downloaded 14.63 MB, and 11.38 MB of that was video that started playing on its own. That's my landing page from the opening, at scale, and it's why the first fix later on is about video.
+The heaviest page wasn't heavy because of JavaScript, though. CNN's homepage downloaded 14.63 MB, and 11.38 MB of that was video, downloaded before anyone pressed play. That's my landing page from the opening, at scale, and it's why the first fix later on is about video.
 
 ## What it costs, in 50 countries
 
 ![How long someone on average income works to pay for 1 GB of mobile data in 50 countries, on a log scale: from 34 hours in Zimbabwe to 2.7 seconds in Israel.](images/work-time.svg)
 
-The chart has a log scale because nothing else fits. The most expensive gigabyte, in Zimbabwe, costs about 46,000 times more work than the cheapest, in Israel. Here's a slice of the [full table](https://github.com/Ernesto-tha-great/js-data-cost/blob/main/results/report.md):
+The chart has a log scale because nothing else fits. The most expensive gigabyte, in Zimbabwe, costs about 46,000 times more work than the cheapest, in Israel. Both ends are unusual prices, so here's a fairer comparison: leave Zimbabwe out, and a gigabyte in Tanzania still costs about 1,860 times more work than one in Israel. Here's a slice of the [full table](https://github.com/Ernesto-tha-great/js-data-cost/blob/main/results/report.md):
 
 | Country | 1 GB | 1 GB in work time | Median site, first visit | CNN, first visit |
 |---|---:|---:|---:|---:|
@@ -226,7 +242,7 @@ The chart has a log scale because nothing else fits. The most expensive gigabyte
 | United Kingdom | $0.62 | 1.4 min | 0.3 s | 1.2 s |
 | Israel | $0.02 | 2.7 s | < 0.1 s | < 0.1 s |
 
-Two things stand out. First, a cheap gigabyte isn't the same as an affordable one. Data in Ethiopia costs about a ninth of the US price, yet the same gigabyte takes nine times more work, because incomes differ far more than prices do. Second, Zimbabwe's price is an outlier in the source data, so check it before you quote it. Even leaving Zimbabwe out, loading CNN's homepage once costs about a minute of work in Ethiopia.
+A cheap gigabyte isn't the same as an affordable one. Data in Ethiopia costs about a ninth of the US price, yet the same gigabyte takes nine times more work, because incomes differ far more than prices do. Zimbabwe's price is an outlier in the source data, so check it before you quote it. Even leaving Zimbabwe out, loading CNN's homepage once costs about a minute of work in Ethiopia.
 
 A few seconds per page sounds harmless, and for one person and one page it is. Teams don't ship to one person, though. The report also prices the median site's unused JavaScript (0.94 MB per first visit) per **million first visits**, which is a number a product team can hold in its head:
 
@@ -238,7 +254,7 @@ A few seconds per page sounds harmless, and for one person and one page it is. T
 | United States | $5,229 |
 | Zimbabwe | $38,127 |
 
-None of that appears on any dashboard you own. Your users pay it, a few cents at a time.
+None of that appears on any dashboard you own. Your users pay it, a fraction of a cent at a time.
 
 ## The repeat visit is the real bill
 
@@ -246,7 +262,7 @@ This is the finding I didn't expect. To price "using a site", the report models 
 
 So the question that matters for regular users isn't "how big is the first visit?" It's "what does a repeat visit download *again*?" Ranked by a month of use, the list reshuffles:
 
-| Site | First visit | Repeat visit | A month (5 visits a day) | What the repeat visit re-downloads |
+| Site | First visit | Repeat visit | A month (5 visits a day) | Biggest thing downloaded again |
 |---|---:|---:|---:|---|
 | Figma | 5.78 MB | 2.69 MB | 406 MB | 2.58 MB of XHR |
 | Yahoo | 5.74 MB | 2.01 MB | 305 MB | 1.16 MB of script |
@@ -282,9 +298,9 @@ editButton.addEventListener('click', async () => {
 }, { once: true });
 ```
 
-Every modern bundler turns that into a separate file. Run the coverage step against your own page to find candidates: anything big that shows up as unused during load is one.
+Vite and webpack turn that into a separate file by default; esbuild does it with `splitting: true`. Run the coverage step against your own page to find candidates: anything big that shows up as unused during load is one.
 
-**3. Make repeat visits nearly free.** Give fingerprinted assets (files whose names change when their contents do, like `app.3f9a2c.js`) a long, immutable cache lifetime, and let only the HTML revalidate:
+**3. Make repeat visits nearly free.** Give fingerprinted assets (files whose names change when their contents do, like `app.3f9a2c.js`) a long cache lifetime, and let only the HTML revalidate:
 
 ```http
 # app.3f9a2c.js, styles.81b0e4.css, fonts, images
@@ -294,7 +310,9 @@ Cache-Control: public, max-age=31536000, immutable
 Cache-Control: no-cache
 ```
 
-If Yahoo's repeat visit were the size of the median site's (0.19 MB instead of 2.01 MB), a month of Yahoo would drop from 305 MB to about 34 MB. No other change in this list saves as much for a returning user.
+The long `max-age` does the work. `immutable` only matters when someone refreshes: it stops Firefox and Safari from revalidating, and Chrome already skips that for everything but the HTML.
+
+The report works out the upper bound for every site: the month if every script, image, font, stylesheet and video file on the repeat visit came from the cache. Google's month would drop from 104 MB to about 4 MB, and Yahoo's from 305 MB to about 105 MB (the rest is API calls and HTML). Figma's wouldn't move at all, because what it downloads again is 2.58 MB of API data, and no cache header fixes that. That's a design conversation, not a config change.
 
 ## A performance budget in money
 
@@ -339,7 +357,7 @@ export function checkBudget(load: { coldBytes: number; warmBytes: number }, line
 }
 ```
 
-To make it a pull-request check, add a workflow that runs it on every PR:
+The repo runs it on every pull request ([`.github/workflows/budget.yml`](https://github.com/Ernesto-tha-great/js-data-cost/blob/main/.github/workflows/budget.yml), trimmed):
 
 ```yaml
 name: budget
@@ -357,10 +375,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run budget -- budget.json
+      - run: npm run budget -- budget.example.json
 ```
 
-In your own project, point `url` at a preview deployment of the pull request rather than at production. Otherwise you're measuring the code you already shipped.
+To use it in your own project, copy `src/`, `scripts/budget.ts`, `countries.json` and `data/`, add the `budget` script from `package.json`, install `playwright` and `tsx`, and write your own `budget.json`. Point its `url` at a preview deployment of the pull request rather than at production. Otherwise you're measuring the code you already shipped.
 
 Here's the same budget, run in GitHub Actions, against Wikipedia's Main Page and then against CNN's homepage:
 
@@ -382,11 +400,11 @@ first visit 17.03 MB, repeat visit 0.01 MB
 ✓ Brazil          first visit 0.63¢ (4.5 s of work), a month 0.70¢
 ```
 
-Look at CNN's numbers next to the study's: 17.03 MB here against 14.63 MB in the measurement run earlier that morning, and a repeat visit of 0.01 MB instead of 0.63 MB. Wikipedia moved too, from 0.63 MB to 0.59 MB. Pages with video and ads change from one load to the next. If you budget a page like that, measure it a few times and budget against the median, or the check will fail at random and people will learn to ignore it.
+Look at CNN's numbers next to the study's: 17.03 MB here against 14.63 MB in the measurement run about 20 minutes earlier, and a repeat visit of 0.01 MB instead of 0.63 MB. Wikipedia moved too, from 0.63 MB to 0.59 MB. Pages with video and ads change from one load to the next. If you budget a page like that, measure it a few times and budget against the median, or the check will fail at random and people will learn to ignore it.
 
 ## What this doesn't tell you
 
-- **It's one place and one browser.** Every measurement came from a US datacentre, in headless Chromium, with a phone's screen and user agent. Sites serve different pages by region, and some serve different pages to anything that looks like a bot.
+- **It's one place and one browser.** Every measurement came from one GitHub Actions runner in Azure's East US 2 region, in headless Chromium, with a phone's screen and user agent. Sites serve different pages by region, and some serve different pages to anything that looks like a bot.
 - **It's logged-out home pages, first screen only.** Real use involves scrolling, logging in and clicking, and all of those download more. These numbers are a floor.
 - **Unused JavaScript is an estimate.** The ratio is measured in source characters and applied to compressed bytes.
 - **The prices are 2023 averages.** People buy bundles, promotions and night plans, and the averages hide all of that. Zimbabwe's figure needs checking against a second source before anyone builds an argument on it.
@@ -405,14 +423,14 @@ npx playwright install chromium
 npm test                                   # 12 tests
 npm run fetch:prices && npm run fetch:income
 npm run measure                            # all 50 sites, about 15 minutes
-npm run measure -- wikipedia               # or just the ones whose name matches
+npm run measure -- wikipedia               # just one site, saved to its own file
 npm run report
 
 cp budget.example.json budget.json         # point it at your page
 npm run budget -- budget.json
 ```
 
-I started this because of one video on one landing page. I finished it with a CI check that would have caught that video before my friend did. That's the version of me I'd have liked to be back then: one who could read the meter before the passenger had to.
+I started this because of one video on one landing page. I finished it with a CI check that would have caught that video before my friend did.
 
 ## Further reading
 

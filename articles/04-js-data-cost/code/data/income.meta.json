@@ -1,0 +1,5 @@
+{
+  "source": "https://api.worldbank.org/v2/country/USA;CAN;MEX;BRA;ARG;COL;CHL;PER;GBR;IRL;FRA;DEU;ITA;ESP;PRT;NLD;SWE;NOR;CHE;POL;UKR;TUR;ISR;SAU;ARE;EGY;MAR;NGA;GHA;KEN;ETH;ZAF;TZA;ZWE;IND;PAK;BGD;LKA;NPL;CHN;JPN;KOR;IDN;PHL;VNM;THA;MYS;SGP;AUS;NZL/indicator/NY.GNP.PCAP.CD?format=json&mrnev=1&per_page=200",
+  "indicator": "NY.GNP.PCAP.CD",
+  "fetchedAt": "2026-10-08T01:53:51.887Z"
+}

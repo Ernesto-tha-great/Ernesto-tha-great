@@ -1,0 +1,195 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 728" width="1200" height="728" role="img" aria-labelledby="t d">
+<title id="t">How long someone on average income works to pay for 1 GB of mobile data</title>
+<desc id="d">Zimbabwe 34 h; Tanzania 1.4 h; Ethiopia 1.3 h; South Africa 36 min, down to Israel 2.7 s. Log scale.</desc>
+<style>
+  svg { --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#8a8983; --rule:#e4e3de; --js:#2a78d6; --js-unused:#9ec5f4; --other:#d6d5cf; --dot:#2a78d6; }
+  @media (prefers-color-scheme: dark) { svg { --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --ink-3:#8f8e86; --rule:#33332f; --js:#3987e5; --js-unused:#1f4f86; --other:#4a4a46; --dot:#5598e7; } }
+  text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+  .h1 { font-size: 22px; font-weight: 700; } .sub { font-size: 14px; fill: var(--ink-2); }
+  .lbl { font-size: 12.5px; fill: var(--ink-2); } .val { font-size: 12px; font-weight: 600; } .note { font-size: 12px; fill: var(--ink-3); }
+  .tick { font-size: 11.5px; fill: var(--ink-3); }
+</style>
+<rect width="100%" height="100%" fill="var(--surface)"/>
+<text class="h1" x="40" y="44">The same gigabyte, a very different price</text>
+<text class="sub" x="40" y="68">How long someone on average income works to pay for 1 GB of mobile data. Log scale: each gridline is ten times the last.</text>
+<text class="sub" x="40" y="90">The median site's first visit (3.58 MB) is about 1/300 of that.</text>
+<line x1="210.0" y1="124" x2="210.0" y2="678" stroke="var(--rule)" stroke-width="1"/>
+<text class="tick" x="210.0" y="118" text-anchor="middle">1 s</text>
+<line x1="269.4" y1="124" x2="269.4" y2="678" stroke="var(--rule)" stroke-width="1"/>
+<text class="tick" x="269.4" y="118" text-anchor="middle">10 s</text>
+<line x1="315.6" y1="124" x2="315.6" y2="678" stroke="var(--rule)" stroke-width="1"/>
+<text class="tick" x="315.6" y="118" text-anchor="middle">1 min</text>
+<line x1="375.0" y1="124" x2="375.0" y2="678" stroke="var(--rule)" stroke-width="1"/>
+<text class="tick" x="375.0" y="118" text-anchor="middle">10 min</text>
+<line x1="421.2" y1="124" x2="421.2" y2="678" stroke="var(--rule)" stroke-width="1"/>
+<text class="tick" x="421.2" y="118" text-anchor="middle">1 h</text>
+<line x1="480.6" y1="124" x2="480.6" y2="678" stroke="var(--rule)" stroke-width="1"/>
+<text class="tick" x="480.6" y="118" text-anchor="middle">10 h</text>
+<line x1="540.0" y1="124" x2="540.0" y2="678" stroke="var(--rule)" stroke-width="1"/>
+<text class="tick" x="540.0" y="118" text-anchor="middle">100 h</text>
+<line x1="790.0" y1="124" x2="790.0" y2="678" stroke="var(--rule)" stroke-width="1"/>
+<text class="tick" x="790.0" y="118" text-anchor="middle">1 s</text>
+<line x1="849.4" y1="124" x2="849.4" y2="678" stroke="var(--rule)" stroke-width="1"/>
+<text class="tick" x="849.4" y="118" text-anchor="middle">10 s</text>
+<line x1="895.6" y1="124" x2="895.6" y2="678" stroke="var(--rule)" stroke-width="1"/>
+<text class="tick" x="895.6" y="118" text-anchor="middle">1 min</text>
+<line x1="955.0" y1="124" x2="955.0" y2="678" stroke="var(--rule)" stroke-width="1"/>
+<text class="tick" x="955.0" y="118" text-anchor="middle">10 min</text>
+<line x1="1001.2" y1="124" x2="1001.2" y2="678" stroke="var(--rule)" stroke-width="1"/>
+<text class="tick" x="1001.2" y="118" text-anchor="middle">1 h</text>
+<line x1="1060.6" y1="124" x2="1060.6" y2="678" stroke="var(--rule)" stroke-width="1"/>
+<text class="tick" x="1060.6" y="118" text-anchor="middle">10 h</text>
+<line x1="1120.0" y1="124" x2="1120.0" y2="678" stroke="var(--rule)" stroke-width="1"/>
+<text class="tick" x="1120.0" y="118" text-anchor="middle">100 h</text>
+<text class="lbl" x="40" y="142">Zimbabwe</text>
+<circle cx="512.3" cy="138" r="5" fill="var(--dot)"/>
+<text class="val" x="522.3" y="142">34 h</text>
+<text class="lbl" x="40" y="164">Tanzania</text>
+<circle cx="429.4" cy="160" r="5" fill="var(--dot)"/>
+<text class="val" x="439.4" y="164">1.4 h</text>
+<text class="lbl" x="40" y="186">Ethiopia</text>
+<circle cx="427.5" cy="182" r="5" fill="var(--dot)"/>
+<text class="val" x="437.5" y="186">1.3 h</text>
+<text class="lbl" x="40" y="208">South Africa</text>
+<circle cx="408.1" cy="204" r="5" fill="var(--dot)"/>
+<text class="val" x="418.1" y="208">36 min</text>
+<text class="lbl" x="40" y="230">Nigeria</text>
+<circle cx="407.9" cy="226" r="5" fill="var(--dot)"/>
+<text class="val" x="417.9" y="230">36 min</text>
+<text class="lbl" x="40" y="252">Nepal</text>
+<circle cx="406.7" cy="248" r="5" fill="var(--dot)"/>
+<text class="val" x="416.7" y="252">34 min</text>
+<text class="lbl" x="40" y="274">Kenya</text>
+<circle cx="406.2" cy="270" r="5" fill="var(--dot)"/>
+<text class="val" x="416.2" y="274">33 min</text>
+<text class="lbl" x="40" y="296">Egypt</text>
+<circle cx="398.5" cy="292" r="5" fill="var(--dot)"/>
+<text class="val" x="408.5" y="296">25 min</text>
+<text class="lbl" x="40" y="318">Ghana</text>
+<circle cx="391.5" cy="314" r="5" fill="var(--dot)"/>
+<text class="val" x="401.5" y="318">19 min</text>
+<text class="lbl" x="40" y="340">Mexico</text>
+<circle cx="390.8" cy="336" r="5" fill="var(--dot)"/>
+<text class="val" x="400.8" y="340">18 min</text>
+<text class="lbl" x="40" y="362">Morocco</text>
+<circle cx="390.2" cy="358" r="5" fill="var(--dot)"/>
+<text class="val" x="400.2" y="362">18 min</text>
+<text class="lbl" x="40" y="384">South Korea</text>
+<circle cx="387.9" cy="380" r="5" fill="var(--dot)"/>
+<text class="val" x="397.9" y="384">17 min</text>
+<text class="lbl" x="40" y="406">New Zealand</text>
+<circle cx="386.7" cy="402" r="5" fill="var(--dot)"/>
+<text class="val" x="396.7" y="406">16 min</text>
+<text class="lbl" x="40" y="428">Philippines</text>
+<circle cx="385.8" cy="424" r="5" fill="var(--dot)"/>
+<text class="val" x="395.8" y="428">15 min</text>
+<text class="lbl" x="40" y="450">Canada</text>
+<circle cx="379.4" cy="446" r="5" fill="var(--dot)"/>
+<text class="val" x="389.4" y="450">12 min</text>
+<text class="lbl" x="40" y="472">Japan</text>
+<circle cx="378.2" cy="468" r="5" fill="var(--dot)"/>
+<text class="val" x="388.2" y="472">11 min</text>
+<text class="lbl" x="40" y="494">United Arab Emirates</text>
+<circle cx="377.8" cy="490" r="5" fill="var(--dot)"/>
+<text class="val" x="387.8" y="494">11 min</text>
+<text class="lbl" x="40" y="516">Bangladesh</text>
+<circle cx="375.3" cy="512" r="5" fill="var(--dot)"/>
+<text class="val" x="385.3" y="516">10 min</text>
+<text class="lbl" x="40" y="538">Pakistan</text>
+<circle cx="375.0" cy="534" r="5" fill="var(--dot)"/>
+<text class="val" x="385.0" y="538">10.0 min</text>
+<text class="lbl" x="40" y="560">Argentina</text>
+<circle cx="373.6" cy="556" r="5" fill="var(--dot)"/>
+<text class="val" x="383.6" y="560">9.5 min</text>
+<text class="lbl" x="40" y="582">United States</text>
+<circle cx="370.6" cy="578" r="5" fill="var(--dot)"/>
+<text class="val" x="380.6" y="582">8.4 min</text>
+<text class="lbl" x="40" y="604">Switzerland</text>
+<circle cx="370.0" cy="600" r="5" fill="var(--dot)"/>
+<text class="val" x="380.0" y="604">8.2 min</text>
+<text class="lbl" x="40" y="626">Portugal</text>
+<circle cx="367.5" cy="622" r="5" fill="var(--dot)"/>
+<text class="val" x="377.5" y="626">7.5 min</text>
+<text class="lbl" x="40" y="648">Vietnam</text>
+<circle cx="366.8" cy="644" r="5" fill="var(--dot)"/>
+<text class="val" x="376.8" y="648">7.3 min</text>
+<text class="lbl" x="40" y="670">India</text>
+<circle cx="366.7" cy="666" r="5" fill="var(--dot)"/>
+<text class="val" x="376.7" y="670">7.2 min</text>
+<text class="lbl" x="620" y="142">Indonesia</text>
+<circle cx="945.1" cy="138" r="5" fill="var(--dot)"/>
+<text class="val" x="955.1" y="142">6.8 min</text>
+<text class="lbl" x="620" y="164">Sri Lanka</text>
+<circle cx="944.6" cy="160" r="5" fill="var(--dot)"/>
+<text class="val" x="954.6" y="164">6.7 min</text>
+<text class="lbl" x="620" y="186">Peru</text>
+<circle cx="944.5" cy="182" r="5" fill="var(--dot)"/>
+<text class="val" x="954.5" y="186">6.7 min</text>
+<text class="lbl" x="620" y="208">Thailand</text>
+<circle cx="944.5" cy="204" r="5" fill="var(--dot)"/>
+<text class="val" x="954.5" y="208">6.7 min</text>
+<text class="lbl" x="620" y="230">Ukraine</text>
+<circle cx="942.3" cy="226" r="5" fill="var(--dot)"/>
+<text class="val" x="952.3" y="230">6.1 min</text>
+<text class="lbl" x="620" y="252">Norway</text>
+<circle cx="938.2" cy="248" r="5" fill="var(--dot)"/>
+<text class="val" x="948.2" y="252">5.2 min</text>
+<text class="lbl" x="620" y="274">Saudi Arabia</text>
+<circle cx="937.9" cy="270" r="5" fill="var(--dot)"/>
+<text class="val" x="947.9" y="274">5.2 min</text>
+<text class="lbl" x="620" y="296">Brazil</text>
+<circle cx="935.7" cy="292" r="5" fill="var(--dot)"/>
+<text class="val" x="945.7" y="296">4.7 min</text>
+<text class="lbl" x="620" y="318">Chile</text>
+<circle cx="935.6" cy="314" r="5" fill="var(--dot)"/>
+<text class="val" x="945.6" y="318">4.7 min</text>
+<text class="lbl" x="620" y="340">Sweden</text>
+<circle cx="935.1" cy="336" r="5" fill="var(--dot)"/>
+<text class="val" x="945.1" y="340">4.6 min</text>
+<text class="lbl" x="620" y="362">Germany</text>
+<circle cx="934.0" cy="358" r="5" fill="var(--dot)"/>
+<text class="val" x="944.0" y="362">4.4 min</text>
+<text class="lbl" x="620" y="384">Turkey</text>
+<circle cx="926.9" cy="380" r="5" fill="var(--dot)"/>
+<text class="val" x="936.9" y="384">3.4 min</text>
+<text class="lbl" x="620" y="406">China</text>
+<circle cx="926.7" cy="402" r="5" fill="var(--dot)"/>
+<text class="val" x="936.7" y="406">3.3 min</text>
+<text class="lbl" x="620" y="428">Colombia</text>
+<circle cx="925.3" cy="424" r="5" fill="var(--dot)"/>
+<text class="val" x="935.3" y="428">3.2 min</text>
+<text class="lbl" x="620" y="450">Netherlands</text>
+<circle cx="923.4" cy="446" r="5" fill="var(--dot)"/>
+<text class="val" x="933.4" y="450">2.9 min</text>
+<text class="lbl" x="620" y="472">Malaysia</text>
+<circle cx="922.4" cy="468" r="5" fill="var(--dot)"/>
+<text class="val" x="932.4" y="472">2.8 min</text>
+<text class="lbl" x="620" y="494">Ireland</text>
+<circle cx="915.3" cy="490" r="5" fill="var(--dot)"/>
+<text class="val" x="925.3" y="494">2.1 min</text>
+<text class="lbl" x="620" y="516">Poland</text>
+<circle cx="910.9" cy="512" r="5" fill="var(--dot)"/>
+<text class="val" x="920.9" y="516">1.8 min</text>
+<text class="lbl" x="620" y="538">Spain</text>
+<circle cx="908.0" cy="534" r="5" fill="var(--dot)"/>
+<text class="val" x="918.0" y="538">1.6 min</text>
+<text class="lbl" x="620" y="560">United Kingdom</text>
+<circle cx="904.6" cy="556" r="5" fill="var(--dot)"/>
+<text class="val" x="914.6" y="560">1.4 min</text>
+<text class="lbl" x="620" y="582">Singapore</text>
+<circle cx="894.6" cy="578" r="5" fill="var(--dot)"/>
+<text class="val" x="904.6" y="582">58 s</text>
+<text class="lbl" x="620" y="604">Australia</text>
+<circle cx="891.6" cy="600" r="5" fill="var(--dot)"/>
+<text class="val" x="901.6" y="604">51 s</text>
+<text class="lbl" x="620" y="626">France</text>
+<circle cx="878.4" cy="622" r="5" fill="var(--dot)"/>
+<text class="val" x="888.4" y="626">31 s</text>
+<text class="lbl" x="620" y="648">Italy</text>
+<circle cx="861.5" cy="644" r="5" fill="var(--dot)"/>
+<text class="val" x="871.5" y="648">16 s</text>
+<text class="lbl" x="620" y="670">Israel</text>
+<circle cx="815.3" cy="666" r="5" fill="var(--dot)"/>
+<text class="val" x="825.3" y="670">2.7 s</text>
+<text class="note" x="40" y="710">Prices: Cable.co.uk Worldwide Mobile Data Pricing (2023). Income: World Bank GNI per capita, Atlas method, over 2,080 working hours. Source: npm run report.</text>
+</svg>

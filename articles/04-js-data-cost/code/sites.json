@@ -1,0 +1,202 @@
+[
+  {
+    "name": "Google",
+    "url": "https://www.google.com/"
+  },
+  {
+    "name": "YouTube",
+    "url": "https://www.youtube.com/"
+  },
+  {
+    "name": "Facebook",
+    "url": "https://www.facebook.com/"
+  },
+  {
+    "name": "Instagram",
+    "url": "https://www.instagram.com/"
+  },
+  {
+    "name": "X",
+    "url": "https://x.com/"
+  },
+  {
+    "name": "TikTok",
+    "url": "https://www.tiktok.com/"
+  },
+  {
+    "name": "Reddit",
+    "url": "https://www.reddit.com/"
+  },
+  {
+    "name": "LinkedIn",
+    "url": "https://www.linkedin.com/"
+  },
+  {
+    "name": "Pinterest",
+    "url": "https://www.pinterest.com/"
+  },
+  {
+    "name": "Wikipedia",
+    "url": "https://en.m.wikipedia.org/wiki/Main_Page"
+  },
+  {
+    "name": "Amazon",
+    "url": "https://www.amazon.com/"
+  },
+  {
+    "name": "eBay",
+    "url": "https://www.ebay.com/"
+  },
+  {
+    "name": "AliExpress",
+    "url": "https://www.aliexpress.com/"
+  },
+  {
+    "name": "Walmart",
+    "url": "https://www.walmart.com/"
+  },
+  {
+    "name": "Etsy",
+    "url": "https://www.etsy.com/"
+  },
+  {
+    "name": "IKEA",
+    "url": "https://www.ikea.com/"
+  },
+  {
+    "name": "Booking.com",
+    "url": "https://www.booking.com/"
+  },
+  {
+    "name": "Airbnb",
+    "url": "https://www.airbnb.com/"
+  },
+  {
+    "name": "Tripadvisor",
+    "url": "https://www.tripadvisor.com/"
+  },
+  {
+    "name": "Netflix",
+    "url": "https://www.netflix.com/"
+  },
+  {
+    "name": "Spotify",
+    "url": "https://open.spotify.com/"
+  },
+  {
+    "name": "Twitch",
+    "url": "https://www.twitch.tv/"
+  },
+  {
+    "name": "IMDb",
+    "url": "https://www.imdb.com/"
+  },
+  {
+    "name": "BBC News",
+    "url": "https://www.bbc.com/news"
+  },
+  {
+    "name": "CNN",
+    "url": "https://www.cnn.com/"
+  },
+  {
+    "name": "The New York Times",
+    "url": "https://www.nytimes.com/"
+  },
+  {
+    "name": "The Guardian",
+    "url": "https://www.theguardian.com/international"
+  },
+  {
+    "name": "Reuters",
+    "url": "https://www.reuters.com/"
+  },
+  {
+    "name": "ESPN",
+    "url": "https://www.espn.com/"
+  },
+  {
+    "name": "The Weather Channel",
+    "url": "https://weather.com/"
+  },
+  {
+    "name": "Yahoo",
+    "url": "https://www.yahoo.com/"
+  },
+  {
+    "name": "Bing",
+    "url": "https://www.bing.com/"
+  },
+  {
+    "name": "DuckDuckGo",
+    "url": "https://duckduckgo.com/"
+  },
+  {
+    "name": "ChatGPT",
+    "url": "https://chatgpt.com/"
+  },
+  {
+    "name": "GitHub",
+    "url": "https://github.com/"
+  },
+  {
+    "name": "Stack Overflow",
+    "url": "https://stackoverflow.com/questions"
+  },
+  {
+    "name": "Medium",
+    "url": "https://medium.com/"
+  },
+  {
+    "name": "Quora",
+    "url": "https://www.quora.com/"
+  },
+  {
+    "name": "Notion",
+    "url": "https://www.notion.com/"
+  },
+  {
+    "name": "Canva",
+    "url": "https://www.canva.com/"
+  },
+  {
+    "name": "Figma",
+    "url": "https://www.figma.com/"
+  },
+  {
+    "name": "Zoom",
+    "url": "https://zoom.us/"
+  },
+  {
+    "name": "Microsoft",
+    "url": "https://www.microsoft.com/"
+  },
+  {
+    "name": "Apple",
+    "url": "https://www.apple.com/"
+  },
+  {
+    "name": "PayPal",
+    "url": "https://www.paypal.com/"
+  },
+  {
+    "name": "Uber",
+    "url": "https://www.uber.com/"
+  },
+  {
+    "name": "Duolingo",
+    "url": "https://www.duolingo.com/"
+  },
+  {
+    "name": "Nike",
+    "url": "https://www.nike.com/"
+  },
+  {
+    "name": "Zara",
+    "url": "https://www.zara.com/"
+  },
+  {
+    "name": "WhatsApp",
+    "url": "https://www.whatsapp.com/"
+  }
+]
