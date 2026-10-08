@@ -1,0 +1,30 @@
+query OrderHistory($first: Int!, $after: String) {
+  viewer {
+    orders(first: $first, after: $after) {
+      edges {
+        node {
+          id
+          status
+          placedAt
+          total {
+            formatted
+          }
+          lineItems {
+            quantity
+            unitPrice {
+              formatted
+            }
+            product {
+              id
+              name
+            }
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}

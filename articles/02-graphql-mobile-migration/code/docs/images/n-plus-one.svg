@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 500" width="1200" height="500" role="img" aria-labelledby="t d">
+<title id="t">Where 401 queries come from, and how DataLoader turns them into 3</title>
+<desc id="d">Naive resolvers run one query for the orders, one per order for its items (100), and one per item for its product (300), totalling 401. With DataLoader, each level of the tree runs one batched query: orders, items for all orders, products for all items, totalling 3.</desc>
+<style>
+  svg { --surface:#fcfcfb; --panel:#f3f2ee; --box:#ffffff; --line:#c9c8c2; --ink:#0b0b0b; --ink-2:#52514e; --accent:#2a78d6; --bad:#c03434; --good:#0a7d0a; }
+  @media (prefers-color-scheme: dark) { svg { --surface:#1a1a19; --panel:#232321; --box:#2c2c2a; --line:#4a4a46; --ink:#ffffff; --ink-2:#c3c2b7; --accent:#5598e7; --bad:#e66767; --good:#3fbf3f; } }
+  text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+  .h1 { font-size: 22px; font-weight: 700; }
+  .h2 { font-size: 16px; font-weight: 700; }
+  .lvl { font-size: 12.5px; fill: var(--ink-2); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  .sql { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .q { fill: var(--box); stroke: var(--line); stroke-width: 1.2; }
+  .count { font-size: 15px; font-weight: 700; }
+  .edge { stroke: var(--line); stroke-width: 1.5; }
+</style>
+<rect width="100%" height="100%" fill="var(--surface)"/>
+<text class="h1" x="40" y="48">Where 401 queries come from</text>
+
+<!-- Naive -->
+<rect x="30" y="72" width="560" height="400" rx="12" fill="var(--panel)"/>
+<text class="h2" x="52" y="102">One resolver, one query</text>
+
+<text class="lvl" x="52" y="146">orders</text>
+<rect class="q" x="225" y="128" width="160" height="28" rx="6"/>
+<text class="sql" x="237" y="147">SELECT … orders</text>
+<text class="count" x="565" y="148" text-anchor="end" style="fill:var(--ink-2)">1</text>
+
+<text class="lvl" x="52" y="236">items</text>
+<g>
+  <line class="edge" x1="305" y1="156" x2="185" y2="214"/><line class="edge" x1="305" y1="156" x2="255" y2="214"/><line class="edge" x1="305" y1="156" x2="325" y2="214"/><line class="edge" x1="305" y1="156" x2="445" y2="214"/>
+  <rect class="q" x="165" y="214" width="40" height="28" rx="6"/><rect class="q" x="235" y="214" width="40" height="28" rx="6"/><rect class="q" x="305" y="214" width="40" height="28" rx="6"/>
+  <text x="367" y="234" font-size="16" style="fill:var(--ink-2)">…</text>
+  <rect class="q" x="425" y="214" width="40" height="28" rx="6"/>
+</g>
+<text class="count" x="565" y="234" text-anchor="end" style="fill:var(--bad)">100</text>
+
+<text class="lvl" x="52" y="300">products</text>
+<g>
+  <line class="edge" x1="185" y1="242" x2="151" y2="304"/><line class="edge" x1="185" y1="242" x2="179" y2="304"/><line class="edge" x1="185" y1="242" x2="207" y2="304"/>
+  <line class="edge" x1="255" y1="242" x2="241" y2="304"/><line class="edge" x1="255" y1="242" x2="269" y2="304"/><line class="edge" x1="255" y1="242" x2="297" y2="304"/>
+  <line class="edge" x1="445" y1="242" x2="417" y2="304"/><line class="edge" x1="445" y1="242" x2="445" y2="304"/><line class="edge" x1="445" y1="242" x2="473" y2="304"/>
+  <rect class="q" x="141" y="304" width="20" height="28" rx="4"/><rect class="q" x="169" y="304" width="20" height="28" rx="4"/><rect class="q" x="197" y="304" width="20" height="28" rx="4"/>
+  <rect class="q" x="231" y="304" width="20" height="28" rx="4"/><rect class="q" x="259" y="304" width="20" height="28" rx="4"/><rect class="q" x="287" y="304" width="20" height="28" rx="4"/>
+  <text x="345" y="324" font-size="16" style="fill:var(--ink-2)">…</text>
+  <rect class="q" x="407" y="304" width="20" height="28" rx="4"/><rect class="q" x="435" y="304" width="20" height="28" rx="4"/><rect class="q" x="463" y="304" width="20" height="28" rx="4"/>
+</g>
+<text class="count" x="565" y="324" text-anchor="end" style="fill:var(--bad)">300</text>
+
+<line x1="52" y1="370" x2="568" y2="370" stroke="var(--line)"/>
+<text class="h2" x="52" y="404">Total</text>
+<text class="h2" x="565" y="404" text-anchor="end" style="fill:var(--bad)">401</text>
+<text class="sql" x="52" y="440" style="fill:var(--ink-2)">The count grows with the data, not with the query.</text>
+
+<!-- DataLoader -->
+<rect x="610" y="72" width="560" height="400" rx="12" fill="var(--panel)"/>
+<text class="h2" x="632" y="102">One batched query per level (DataLoader)</text>
+
+<text class="lvl" x="632" y="146">orders</text>
+<rect class="q" x="750" y="128" width="300" height="28" rx="6"/>
+<text class="sql" x="762" y="147">SELECT … FROM orders WHERE …</text>
+<text class="count" x="1120" y="148" style="fill:var(--good)">1</text>
+
+<text class="lvl" x="632" y="236">items</text>
+<line class="edge" x1="900" y1="156" x2="900" y2="214"/>
+<rect class="q" x="750" y="214" width="300" height="28" rx="6"/>
+<text class="sql" x="762" y="233">… WHERE order_id IN (100 ids)</text>
+<text class="count" x="1120" y="234" style="fill:var(--good)">1</text>
+
+<text class="lvl" x="632" y="300">products</text>
+<line class="edge" x1="900" y1="242" x2="900" y2="304"/>
+<rect class="q" x="750" y="304" width="300" height="28" rx="6"/>
+<text class="sql" x="762" y="323">… WHERE id IN (40 distinct ids)</text>
+<text class="count" x="1120" y="324" style="fill:var(--good)">1</text>
+
+<line x1="632" y1="370" x2="1148" y2="370" stroke="var(--line)"/>
+<text class="h2" x="632" y="404">Total</text>
+<text class="h2" x="1113" y="404" style="fill:var(--good)">3</text>
+<text class="sql" x="632" y="440" style="fill:var(--ink-2)">The count grows with the depth of the query, not the data.</text>
+</svg>

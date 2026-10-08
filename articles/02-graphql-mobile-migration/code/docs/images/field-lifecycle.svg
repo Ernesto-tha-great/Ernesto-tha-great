@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="1200" height="380" role="img" aria-labelledby="t d">
+<title id="t">The lifecycle of a field you want to delete</title>
+<desc id="d">Five stages: add the new field, deprecate the old one and re-implement it on the new resolvers, watch runtime usage per app version, run the removal gate in CI against the manifests of supported builds, and delete the field once the gate passes.</desc>
+<style>
+  svg { --surface:#fcfcfb; --box:#ffffff; --line:#c9c8c2; --ink:#0b0b0b; --ink-2:#52514e; --accent:#2a78d6; --good:#0a7d0a; --good-bg:#e3f4e3; }
+  @media (prefers-color-scheme: dark) { svg { --surface:#1a1a19; --box:#2c2c2a; --line:#4a4a46; --ink:#ffffff; --ink-2:#c3c2b7; --accent:#5598e7; --good:#3fbf3f; --good-bg:#1e3a1e; } }
+  text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+  .h1 { font-size: 22px; font-weight: 700; }
+  .n { font-size: 13px; font-weight: 700; fill: var(--accent); }
+  .t { font-size: 15px; font-weight: 700; }
+  .b { font-size: 12.5px; fill: var(--ink-2); }
+  .code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; fill: var(--ink); }
+  .box { fill: var(--box); stroke: var(--line); stroke-width: 1.5; }
+  .arrow { stroke: var(--accent); stroke-width: 2; fill: none; marker-end: url(#a); }
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>
+<rect width="100%" height="100%" fill="var(--surface)"/>
+<text class="h1" x="40" y="48">Deleting a field without breaking anyone</text>
+
+<rect class="box" x="40" y="90" width="200" height="200" rx="12"/>
+<text class="n" x="58" y="118">1</text>
+<text class="t" x="58" y="142">Add the new field</text>
+<text class="b" x="58" y="168">placedAt, lineItems,</text>
+<text class="b" x="58" y="186">viewer.orders</text>
+<text class="b" x="58" y="216">New app builds start</text>
+<text class="b" x="58" y="234">using it.</text>
+
+<rect class="box" x="270" y="90" width="200" height="200" rx="12"/>
+<text class="n" x="288" y="118">2</text>
+<text class="t" x="288" y="142">Deprecate, don't delete</text>
+<text class="code" x="288" y="168">@deprecated(reason: …)</text>
+<text class="b" x="288" y="198">Re-implement the old</text>
+<text class="b" x="288" y="216">field on the new</text>
+<text class="b" x="288" y="234">resolvers, so old apps</text>
+<text class="b" x="288" y="252">get faster for free.</text>
+
+<rect class="box" x="500" y="90" width="200" height="200" rx="12"/>
+<text class="n" x="518" y="118">3</text>
+<text class="t" x="518" y="142">Watch who calls it</text>
+<text class="b" x="518" y="168">Field usage per</text>
+<text class="b" x="518" y="186">client@version, from</text>
+<text class="b" x="518" y="204">real traffic.</text>
+<text class="code" x="518" y="234">GET /usage</text>
+
+<rect class="box" x="730" y="90" width="200" height="200" rx="12"/>
+<text class="n" x="748" y="118">4</text>
+<text class="t" x="748" y="142">Gate it in CI</text>
+<text class="b" x="748" y="168">Validate every shipped</text>
+<text class="b" x="748" y="186">operation of every</text>
+<text class="b" x="748" y="204">supported build against</text>
+<text class="b" x="748" y="222">the schema without it.</text>
+<text class="code" x="748" y="252">npm run check-removal</text>
+
+<rect x="960" y="90" width="200" height="200" rx="12" fill="var(--good-bg)"/>
+<text class="n" x="978" y="118" style="fill:var(--good)">5</text>
+<text class="t" x="978" y="142" style="fill:var(--good)">Delete it</text>
+<text class="b" x="978" y="168">Only when the gate</text>
+<text class="b" x="978" y="186">passes and usage has</text>
+<text class="b" x="978" y="204">been zero for a while.</text>
+
+<path class="arrow" d="M240 190 H266"/>
+<path class="arrow" d="M470 190 H496"/>
+<path class="arrow" d="M700 190 H726"/>
+<path class="arrow" d="M930 190 H956"/>
+
+<text class="b" x="40" y="336">Stages 3 and 4 answer the same question two ways: traffic tells you what is being called,</text>
+<text class="b" x="40" y="356">manifests tell you what could still be called by a build that hasn't phoned home this week.</text>
+</svg>

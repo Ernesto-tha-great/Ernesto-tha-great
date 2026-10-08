@@ -1,0 +1,6 @@
+query Profile($customerId: ID!) {
+  customer(id: $customerId) {
+    id
+    name
+  }
+}

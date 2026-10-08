@@ -1,0 +1,6 @@
+query Profile {
+  viewer {
+    id
+    name
+  }
+}

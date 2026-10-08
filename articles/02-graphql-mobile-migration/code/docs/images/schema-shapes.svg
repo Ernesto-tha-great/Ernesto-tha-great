@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="1200" height="560" role="img" aria-labelledby="t d">
+<title id="t">The table-shaped v1 schema next to the client-shaped v2 schema</title>
+<desc id="d">v1 mirrors database tables with snake_case columns and a customer_id argument. v2 starts from the viewer, uses connections and a Money type, and keeps the old fields as deprecated adapters that run on the new resolvers.</desc>
+<style>
+  svg { --surface:#fcfcfb; --panel:#f3f2ee; --ink:#0b0b0b; --ink-2:#52514e; --muted:#9a9993; --new:#0a7d0a; --old:#8a8983; --accent:#2a78d6; }
+  @media (prefers-color-scheme: dark) { svg { --surface:#1a1a19; --panel:#232321; --ink:#ffffff; --ink-2:#c3c2b7; --muted:#7d7c76; --new:#3fbf3f; --old:#8f8e86; --accent:#5598e7; } }
+  text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+  .h1 { font-size: 22px; font-weight: 700; }
+  .h2 { font-size: 16px; font-weight: 700; }
+  .sub { font-size: 13px; fill: var(--ink-2); }
+  .code text, .code tspan { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; white-space: pre; }
+  .kw { fill: var(--accent); }
+  .dep { fill: var(--old); text-decoration: line-through; }
+  .new { fill: var(--new); font-weight: 600; }
+  .note { font-size: 12px; fill: var(--ink-2); font-style: italic; }
+</style>
+<rect width="100%" height="100%" fill="var(--surface)"/>
+<text class="h1" x="40" y="48">Same data, two shapes</text>
+
+<rect x="30" y="72" width="540" height="460" rx="12" fill="var(--panel)"/>
+<text class="h2" x="52" y="102">v1: the database in a costume</text>
+<text class="sub" x="52" y="122">Types are tables, fields are columns.</text>
+<g class="code">
+  <text x="52" y="160"><tspan class="kw">type</tspan> Query {</text>
+  <text x="72" y="182">orders(customer_id: ID!): [Order]</text>
+  <text x="52" y="204">}</text>
+  <text x="52" y="240"><tspan class="kw">type</tspan> Order {</text>
+  <text x="72" y="262">id: ID!</text>
+  <text x="72" y="284">customer_id: ID</text>
+  <text x="72" y="306">status: String</text>
+  <text x="72" y="328">created_at: String</text>
+  <text x="72" y="350">order_items: [OrderItem]</text>
+  <text x="52" y="372">}</text>
+  <text x="52" y="408"><tspan class="kw">type</tspan> OrderItem {</text>
+  <text x="72" y="430">qty: Int  product_id: ID</text>
+  <text x="72" y="452">product: Product</text>
+  <text x="52" y="474">}</text>
+</g>
+<text class="note" x="52" y="510">Anyone can pass any customer_id. Nothing is non-null. No paging.</text>
+
+<rect x="600" y="72" width="570" height="460" rx="12" fill="var(--panel)"/>
+<text class="h2" x="622" y="102">v2: shaped around the screen</text>
+<text class="sub" x="622" y="122"><tspan class="new">new fields</tspan>, <tspan style="fill:var(--old)">old fields kept as deprecated adapters</tspan></text>
+<g class="code">
+  <text x="622" y="160"><tspan class="kw">type</tspan> Query {</text>
+  <text x="642" y="182" class="new">viewer: Viewer</text>
+  <text x="642" y="204" class="dep">orders(customer_id: ID!): [Order]</text>
+  <text x="622" y="226">}</text>
+  <text x="622" y="262"><tspan class="kw">type</tspan> Viewer { <tspan class="new">orders(first, after): OrderConnection!</tspan> }</text>
+  <text x="622" y="298"><tspan class="kw">type</tspan> Order {</text>
+  <text x="642" y="320">id: ID!   status: String!</text>
+  <text x="642" y="342" class="new">placedAt: String!   total: Money!</text>
+  <text x="642" y="364" class="new">lineItems: [OrderItem!]!</text>
+  <text x="642" y="386"><tspan class="dep">customer_id</tspan>  <tspan class="dep">created_at</tspan>  <tspan class="dep">order_items</tspan></text>
+  <text x="622" y="408">}</text>
+  <text x="622" y="444"><tspan class="kw">type</tspan> OrderItem {</text>
+  <text x="642" y="466"><tspan class="new">quantity  unitPrice: Money!  product: Product!</tspan></text>
+  <text x="642" y="488"><tspan class="dep">qty</tspan>  <tspan class="dep">product_id</tspan>  <tspan class="dep">order_id</tspan></text>
+  <text x="622" y="510">}</text>
+</g>
+</svg>

@@ -1,0 +1,15 @@
+query OrderHistory($customerId: ID!) {
+  orders(customer_id: $customerId) {
+    id
+    status
+    created_at
+    order_items {
+      qty
+      product_id
+      product {
+        name
+        price_cents
+      }
+    }
+  }
+}
