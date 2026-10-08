@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" width="1200" height="520" role="img" aria-labelledby="t d">
+<title id="t">Share of developers with a second success, by days since their first</title>
+<desc id="d">Sample cohort of 1428 developers. By day 30, 76.7% had a second success; 47.2% without a nudge in the previous 72 hours.</desc>
+<style>
+  svg { --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#8a8983; --rule:#e4e3de; --s1:#2a78d6; --s2:#eb6834; --bar:#2a78d6; --muted:#c9c8c2; }
+  @media (prefers-color-scheme: dark) { svg { --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --ink-3:#8f8e86; --rule:#383835; --s1:#3987e5; --s2:#d95926; --bar:#3987e5; --muted:#4a4a46; } }
+  text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+  .h1 { font-size: 22px; font-weight: 700; }
+  .sub { font-size: 14px; fill: var(--ink-2); }
+  .axis { font-size: 12px; fill: var(--ink-3); }
+  .lbl { font-size: 13px; fill: var(--ink-2); }
+  .val { font-size: 13px; font-weight: 600; }
+  .note { font-size: 12px; fill: var(--ink-3); }
+</style>
+<rect width="100%" height="100%" fill="var(--surface)"/>
+<text class="h1" x="40" y="44">Who comes back, and how fast</text>
+<text class="sub" x="40" y="68">Cumulative share of developers with a second success, by days since their first. Sample cohort from scripts/sample.ts.</text>
+<rect x="40" y="86" width="14" height="3" fill="var(--s1)"/><text class="lbl" x="60" y="92">Any second success</text>
+<rect x="210" y="86" width="14" height="3" fill="var(--s2)"/><text class="lbl" x="230" y="92">Unprompted (no nudge in the 72 h before)</text>
+<line x1="90" x2="990" y1="440" y2="440" stroke="var(--rule)"/>
+<text class="axis" x="78" y="444" text-anchor="end">0%</text>
+<line x1="90" x2="990" y1="360" y2="360" stroke="var(--rule)"/>
+<text class="axis" x="78" y="364" text-anchor="end">25%</text>
+<line x1="90" x2="990" y1="280" y2="280" stroke="var(--rule)"/>
+<text class="axis" x="78" y="284" text-anchor="end">50%</text>
+<line x1="90" x2="990" y1="200" y2="200" stroke="var(--rule)"/>
+<text class="axis" x="78" y="204" text-anchor="end">75%</text>
+<line x1="90" x2="990" y1="120" y2="120" stroke="var(--rule)"/>
+<text class="axis" x="78" y="124" text-anchor="end">100%</text>
+<text class="axis" x="90" y="462" text-anchor="middle">day 0</text>
+<text class="axis" x="240" y="462" text-anchor="middle">day 5</text>
+<text class="axis" x="390" y="462" text-anchor="middle">day 10</text>
+<text class="axis" x="540" y="462" text-anchor="middle">day 15</text>
+<text class="axis" x="690" y="462" text-anchor="middle">day 20</text>
+<text class="axis" x="840" y="462" text-anchor="middle">day 25</text>
+<text class="axis" x="990" y="462" text-anchor="middle">day 30</text>
+<line x1="180" x2="180" y1="120" y2="440" stroke="var(--ink-3)" stroke-dasharray="4 4"/>
+<text class="axis" x="186" y="134">nudge email (day 3)</text>
+<path d="M90.0 440.0 L120.0 440.0 L150.0 420.7 L180.0 406.6 L210.0 370.3 L240.0 338.9 L270.0 312.3 L300.0 304.6 L330.0 293.2 L360.0 284.9 L390.0 277.3 L420.0 267.9 L450.0 259.4 L480.0 253.3 L510.0 247.5 L540.0 241.5 L570.0 236.8 L600.0 232.3 L630.0 228.9 L660.0 225.3 L690.0 220.6 L720.0 218.4 L750.0 214.8 L780.0 211.0 L810.0 208.5 L840.0 205.2 L870.0 202.9 L900.0 200.4 L930.0 198.7 L960.0 196.4 L990.0 194.6" fill="none" stroke="var(--s1)" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M90.0 440.0 L120.0 440.0 L150.0 420.7 L180.0 406.6 L210.0 406.6 L240.0 406.6 L270.0 406.6 L300.0 399.0 L330.0 387.6 L360.0 379.3 L390.0 371.7 L420.0 362.2 L450.0 353.7 L480.0 347.7 L510.0 341.8 L540.0 335.8 L570.0 331.1 L600.0 326.6 L630.0 323.2 L660.0 319.7 L690.0 315.0 L720.0 312.7 L750.0 309.1 L780.0 305.3 L810.0 302.9 L840.0 299.5 L870.0 297.3 L900.0 294.8 L930.0 293.0 L960.0 290.8 L990.0 289.0" fill="none" stroke="var(--s2)" stroke-width="2.5" stroke-linejoin="round"/>
+<circle cx="990" cy="194.6218487394958" r="4.5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/>
+<circle cx="990" cy="288.96358543417364" r="4.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/>
+<text class="val" x="1002" y="199.6218487394958">76.7%</text>
+<text class="val" x="1002" y="293.96358543417364">47.2%</text>
+<text class="note" x="40" y="500">Sample data with invented behaviour, generated to demonstrate the queries. Run npm run report -- events.db on your own events.</text>
+</svg>

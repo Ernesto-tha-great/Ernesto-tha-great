@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400" role="img" aria-labelledby="t d">
+<title id="t">One developer's journey, and the definitions that apply to it</title>
+<desc id="d">A timeline: signup, a 401 error, the first success, more calls in the same session, at least 24 hours of quiet, a nudge email, and a second success. TTFS spans signup to first success; TTSS spans first success to second success; the second success is prompted because the nudge came within 72 hours before it.</desc>
+<style>
+  svg { --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#8a8983; --line:#c9c8c2; --accent:#2a78d6; --good:#0a7d0a; --bad:#c03434; --nudge:#b26a00; --band:#eef4fc; }
+  @media (prefers-color-scheme: dark) { svg { --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --ink-3:#8f8e86; --line:#4a4a46; --accent:#5598e7; --good:#3fbf3f; --bad:#e66767; --nudge:#e0a040; --band:#1f2a38; } }
+  text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+  .h1 { font-size: 22px; font-weight: 700; }
+  .ev { font-size: 13px; font-weight: 600; }
+  .sm { font-size: 12px; fill: var(--ink-2); }
+  .span { font-size: 13px; font-weight: 700; fill: var(--accent); }
+</style>
+<rect width="100%" height="100%" fill="var(--surface)"/>
+<text class="h1" x="40" y="48">One developer, one month</text>
+
+<!-- same-session band and quiet gap -->
+<rect x="300" y="150" width="190" height="60" rx="6" fill="var(--band)"/>
+<text class="sm" x="308" y="142">same session: still the first success</text>
+
+<line x1="60" y1="180" x2="1150" y2="180" stroke="var(--line)" stroke-width="2"/>
+
+<!-- events -->
+<circle cx="90" cy="180" r="7" fill="var(--ink-3)"/>
+<text class="ev" x="90" y="228" text-anchor="middle">Signs up</text>
+<text class="sm" x="90" y="246" text-anchor="middle">day 0, 09:00</text>
+
+<circle cx="220" cy="180" r="7" style="fill:var(--bad)"/>
+<text class="ev" x="220" y="228" text-anchor="middle" style="fill:var(--bad)">401</text>
+<text class="sm" x="220" y="246" text-anchor="middle">wrong key</text>
+
+<circle cx="310" cy="180" r="9" style="fill:var(--good)"/>
+<text class="ev" x="310" y="228" text-anchor="middle" style="fill:var(--good)">First success</text>
+<text class="sm" x="310" y="246" text-anchor="middle">GET /v1/rates 200</text>
+
+<circle cx="380" cy="180" r="5" fill="var(--ink-3)"/>
+<circle cx="430" cy="180" r="5" fill="var(--ink-3)"/>
+<circle cx="475" cy="180" r="5" fill="var(--ink-3)"/>
+
+<text class="sm" x="560" y="172" text-anchor="middle">at least 24 h of quiet</text>
+<line x1="495" y1="160" x2="640" y2="160" stroke="var(--ink-3)" stroke-dasharray="3 4"/>
+
+<circle cx="760" cy="180" r="7" style="fill:var(--nudge)"/>
+<text class="ev" x="760" y="228" text-anchor="middle" style="fill:var(--nudge)">Nudge email</text>
+<text class="sm" x="760" y="246" text-anchor="middle">day 3</text>
+
+<circle cx="900" cy="180" r="9" style="fill:var(--good)"/>
+<text class="ev" x="900" y="228" text-anchor="middle" style="fill:var(--good)">Second success</text>
+<text class="sm" x="900" y="246" text-anchor="middle">day 3, 15:00 · prompted</text>
+
+<text class="sm" x="1130" y="228" text-anchor="end">day 30: horizon</text>
+<line x1="1130" y1="166" x2="1130" y2="194" stroke="var(--ink-3)" stroke-width="2"/>
+
+<!-- spans -->
+<path d="M90 290 V300 H310 V290" fill="none" stroke="var(--accent)" stroke-width="2"/>
+<text class="span" x="200" y="322" text-anchor="middle">TTFS</text>
+<text class="sm" x="200" y="340" text-anchor="middle">signup → first success</text>
+
+<path d="M310 290 V300 H900 V290" fill="none" stroke="var(--accent)" stroke-width="2"/>
+<text class="span" x="605" y="322" text-anchor="middle">TTSS</text>
+<text class="sm" x="605" y="340" text-anchor="middle">first success → second success (must be ≥ 24 h and ≤ 30 days)</text>
+
+<path d="M760 110 V100 H900 V110" fill="none" stroke="var(--nudge)" stroke-width="2"/>
+<text class="sm" x="830" y="90" text-anchor="middle" style="fill:var(--nudge)">nudge within 72 h before → prompted</text>
+</svg>
